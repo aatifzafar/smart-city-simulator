@@ -1,0 +1,2 @@
+[console_scripts]
+smart-city-sim = smart_city_simulator.main:main

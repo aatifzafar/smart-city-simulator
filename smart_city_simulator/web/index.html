@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart City Simulator — Autonomous Urban Operations Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="dark-theme">
+  <!-- Top Application Bar -->
+  <header class="top-nav glass-panel">
+    <div class="brand-section">
+      <div class="brand-logo">
+        <span class="city-icon">🌆</span>
+        <div class="pulse-indicator"></div>
+      </div>
+      <div class="brand-text">
+        <h1>Mini Smart City Simulator</h1>
+        <p class="subtitle">Autonomous Multi-Subsystem Urban Operations Center</p>
+      </div>
+    </div>
+
+    <!-- Clock & Primary Status Badges -->
+    <div class="nav-telemetry">
+      <div class="clock-badge">
+        <span class="clock-label">TIME STEP</span>
+        <span id="sim-clock" class="clock-value">Step 00 <small>(00:00 - Day 1)</small></span>
+      </div>
+
+      <div id="policy-badge" class="status-pill pill-normal">
+        <span class="pill-dot"></span>
+        <span id="policy-text">Traffic: Standard</span>
+      </div>
+
+      <div id="aqi-badge" class="status-pill pill-good">
+        <span class="pill-dot"></span>
+        <span id="aqi-text">AQI 30 • GOOD</span>
+      </div>
+
+      <div id="grid-badge" class="status-pill pill-normal">
+        <span class="pill-dot"></span>
+        <span id="grid-text">Grid: Balanced</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="dashboard-container">
+    <!-- Row 1: KPI Telemetry Cards -->
+    <section class="kpi-grid">
+      <!-- Card 1: Traffic -->
+      <div class="kpi-card glass-panel" id="card-traffic">
+        <div class="kpi-header">
+          <span class="kpi-icon traffic-icon">🚗</span>
+          <span class="kpi-title">Traffic Congestion</span>
+          <span id="traffic-percent-badge" class="kpi-badge badge-blue">0.0%</span>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-metric">
+            <span id="metric-congestion" class="metric-value">0.0%</span>
+            <span class="metric-sub">avg road saturation</span>
+          </div>
+          <div class="progress-bar-container">
+            <div id="congestion-bar" class="progress-fill fill-blue" style="width: 0%"></div>
+          </div>
+          <div class="kpi-stats">
+            <div>Vehicles: <strong id="val-vehicles">0</strong></div>
+            <div>Rerouted: <strong id="val-rerouted">0</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Energy Grid -->
+      <div class="kpi-card glass-panel" id="card-energy">
+        <div class="kpi-header">
+          <span class="kpi-icon energy-icon">⚡</span>
+          <span class="kpi-title">Power Grid Dispatch</span>
+          <span id="energy-clean-badge" class="kpi-badge badge-green">0% Clean</span>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-metric">
+            <span id="metric-demand" class="metric-value">0.0 <small>MW</small></span>
+            <span class="metric-sub">demand load</span>
+          </div>
+          <div class="progress-bar-container">
+            <div id="energy-bar" class="progress-fill fill-green" style="width: 0%"></div>
+          </div>
+          <div class="kpi-stats">
+            <div>Supply: <strong id="val-supply">0.0 MW</strong></div>
+            <div>Emissions: <strong id="val-emissions">0 kg</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: Air Quality Index -->
+      <div class="kpi-card glass-panel" id="card-environment">
+        <div class="kpi-header">
+          <span class="kpi-icon env-icon">🍃</span>
+          <span class="kpi-title">Air Quality Index</span>
+          <span id="aqi-category-badge" class="kpi-badge badge-emerald">GOOD</span>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-metric">
+            <span id="metric-aqi" class="metric-value">30.0</span>
+            <span class="metric-sub">threshold alert @ 110</span>
+          </div>
+          <div class="progress-bar-container">
+            <div id="aqi-bar" class="progress-fill fill-emerald" style="width: 25%"></div>
+          </div>
+          <div class="kpi-stats">
+            <div>Traffic Share: <strong id="val-aqi-traffic">0.0</strong></div>
+            <div>Energy Share: <strong id="val-aqi-energy">0.0</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4: Waste Management -->
+      <div class="kpi-card glass-panel" id="card-waste">
+        <div class="kpi-header">
+          <span class="kpi-icon waste-icon">♻️</span>
+          <span class="kpi-title">Waste Logistics</span>
+          <span id="waste-badge" class="kpi-badge badge-purple">Normal</span>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-metric">
+            <span id="metric-waste" class="metric-value">0 <small>kg</small></span>
+            <span class="metric-sub">step refuse generated</span>
+          </div>
+          <div class="progress-bar-container">
+            <div id="waste-bar" class="progress-fill fill-purple" style="width: 20%"></div>
+          </div>
+          <div class="kpi-stats">
+            <div>Collected: <strong id="val-waste-collected">0 kg</strong></div>
+            <div>Overflow Bins: <strong id="val-overflow">0</strong></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Row 2: Interactive City Canvas & Operations Control Center -->
+    <section class="center-stage">
+      <!-- City Simulation Visualizer Canvas -->
+      <div class="canvas-panel glass-panel">
+        <div class="panel-toolbar">
+          <div class="panel-heading">
+            <span class="toolbar-icon">🗺️</span>
+            <h2>Municipal Topology & Live Telemetry Map</h2>
+          </div>
+          <div class="canvas-layers">
+            <label class="layer-toggle">
+              <input type="checkbox" id="layer-vehicles" checked>
+              <span>Vehicles</span>
+            </label>
+            <label class="layer-toggle">
+              <input type="checkbox" id="layer-signals" checked>
+              <span>Signals</span>
+            </label>
+            <label class="layer-toggle">
+              <input type="checkbox" id="layer-power" checked>
+              <span>Grid</span>
+            </label>
+            <label class="layer-toggle">
+              <input type="checkbox" id="layer-haze" checked>
+              <span>Pollution Haze</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="canvas-viewport" id="viewport-container">
+          <canvas id="city-canvas" width="1200" height="680"></canvas>
+          <!-- Live Overlay Legend -->
+          <div class="canvas-legend glass-panel">
+            <div class="legend-item"><span class="legend-color arterial"></span> Arterial Boulevard</div>
+            <div class="legend-item"><span class="legend-color local"></span> Ring Road</div>
+            <div class="legend-item"><span class="legend-circle green"></span> Traffic Light</div>
+            <div class="legend-item"><span class="legend-icon">☀️</span> Solar Farm</div>
+            <div class="legend-item"><span class="legend-icon">💨</span> Wind Farm</div>
+            <div class="legend-item"><span class="legend-icon">🏭</span> Gas Peaker</div>
+            <div class="legend-item"><span class="legend-icon">🚛</span> Refuse Truck</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Control Panel & Policy Room -->
+      <aside class="control-panel glass-panel">
+        <div class="panel-toolbar">
+          <div class="panel-heading">
+            <span class="toolbar-icon">🎛️</span>
+            <h2>Operations Console</h2>
+          </div>
+        </div>
+
+        <!-- Simulation Step Controls -->
+        <div class="control-group">
+          <label class="control-label">SIMULATION RUNNER</label>
+          <div class="button-row">
+            <button id="btn-play" class="btn btn-primary">
+              <span class="btn-icon">▶</span>
+              <span id="btn-play-text">Run Auto</span>
+            </button>
+            <button id="btn-step" class="btn btn-secondary">
+              <span class="btn-icon">⏭</span>
+              <span>Step 1h</span>
+            </button>
+            <button id="btn-reset" class="btn btn-danger">
+              <span class="btn-icon">🔄</span>
+              <span>Reset</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Speed Slider -->
+        <div class="control-group">
+          <div class="slider-header">
+            <span class="control-label">SIMULATION SPEED</span>
+            <span id="speed-display" class="slider-value">350 ms</span>
+          </div>
+          <input type="range" id="slider-speed" min="50" max="1000" step="50" value="350">
+        </div>
+
+        <!-- Zone Configuration -->
+        <div class="control-group">
+          <label class="control-label">MUNICIPAL SCALE</label>
+          <div class="config-row">
+            <div class="input-field">
+              <span>Zones:</span>
+              <input type="number" id="input-zones" min="1" max="8" value="3">
+            </div>
+            <button id="btn-apply-config" class="btn btn-outline">Apply Scale</button>
+          </div>
+        </div>
+
+        <!-- Emergent Policy Overrides -->
+        <div class="control-group">
+          <label class="control-label">SMART POLICY OVERRIDES</label>
+          <div class="policy-toggle-card">
+            <div class="policy-info">
+              <span class="policy-name">Odd-Even Vehicle Rule</span>
+              <span class="policy-desc">Cuts commuter volume ~50%</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-odd-even">
+              <span class="slider round"></span>
+            </label>
+          </div>
+
+          <div class="policy-toggle-card">
+            <div class="policy-info">
+              <span class="policy-name">Fossil Power Curtailment</span>
+              <span class="policy-desc">Caps thermal gas peakers at 50%</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-curtail">
+              <span class="slider round"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Live Subsystem Health Status -->
+        <div class="control-group">
+          <label class="control-label">SUBSYSTEM STATUS</label>
+          <ul class="subsystem-list">
+            <li class="subsystem-item">
+              <span>Traffic Flow Strategy:</span>
+              <strong id="stat-strategy" class="text-accent">Dynamic Reroute</strong>
+            </li>
+            <li class="subsystem-item">
+              <span>Renewable Energy Share:</span>
+              <strong id="stat-renew-share" class="text-green">0%</strong>
+            </li>
+            <li class="subsystem-item">
+              <span>Garbage Fleet Status:</span>
+              <strong id="stat-fleet" class="text-purple">Active En Route</strong>
+            </li>
+            <li class="subsystem-item">
+              <span>Emergency Mode:</span>
+              <strong id="stat-emergency" class="text-muted">Standby</strong>
+            </li>
+          </ul>
+        </div>
+      </aside>
+    </section>
+
+    <!-- Row 3: Live Telemetry Charts & Event Log -->
+    <section class="analytics-section">
+      <!-- Telemetry Charts -->
+      <div class="charts-panel glass-panel">
+        <div class="panel-toolbar">
+          <div class="panel-heading">
+            <span class="toolbar-icon">📈</span>
+            <h2>Real-Time Subsystem Telemetry Time-Series</h2>
+          </div>
+          <div class="chart-legend-tabs">
+            <span class="chart-tab active" data-chart="all">Unified</span>
+            <span class="chart-tab" data-chart="traffic">Traffic</span>
+            <span class="chart-tab" data-chart="energy">Energy</span>
+            <span class="chart-tab" data-chart="aqi">AQI</span>
+          </div>
+        </div>
+        <div class="charts-container">
+          <canvas id="telemetry-chart" width="800" height="260"></canvas>
+        </div>
+      </div>
+
+      <!-- Real-Time Event Log Ticker -->
+      <div class="events-panel glass-panel">
+        <div class="panel-toolbar">
+          <div class="panel-heading">
+            <span class="toolbar-icon">📡</span>
+            <h2>Event Bus Activity Feed</h2>
+          </div>
+          <button id="btn-clear-events" class="btn-text">Clear</button>
+        </div>
+        <div class="events-stream" id="events-stream">
+          <div class="event-entry event-info">
+            <span class="event-time">00:00</span>
+            <span class="event-badge">SYSTEM</span>
+            <span class="event-msg">Mini Smart City Simulator initialized. Subsystems operational.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
