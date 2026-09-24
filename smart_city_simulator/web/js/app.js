@@ -266,6 +266,26 @@ class SmartCityApp {
       this.dom.inspectVal1.className = resPct < 25 ? "text-rose" : "text-cyan";
       this.dom.inspectVal2.textContent = `Consumption: ${Math.round(this.state.latestMetrics.water_consumption_kl || 0)} kL/hr`;
       this.dom.inspectVal3.textContent = `Drainage Load: ${this.state.latestMetrics.avg_drainage_load_pct || 25}%`;
+    } else if (data.type === "GRID_SUBSTATION") {
+      this.dom.inspectIcon.textContent = "⚡";
+      const blackout = !!this.state.latestMetrics.blackout;
+      this.dom.inspectVal1.textContent = blackout ? "GRID BLACKOUT (DEFICIT)" : "Active Substation (Balanced)";
+      this.dom.inspectVal1.className = blackout ? "text-rose" : "text-green";
+      this.dom.inspectVal2.textContent = `Supply: ${(this.state.latestMetrics.energy_supply || 6.0).toFixed(1)} MW / Demand: ${(this.state.latestMetrics.energy_usage || 5.8).toFixed(1)} MW`;
+      this.dom.inspectVal3.textContent = `Clean Energy Share: ${this.state.latestMetrics.energy_supply ? Math.round(((this.state.latestMetrics.renewable_mw || 3.5) / this.state.latestMetrics.energy_supply) * 100) : 55}%`;
+    } else if (data.type === "GRID_PYLON") {
+      this.dom.inspectIcon.textContent = "🗼";
+      this.dom.inspectVal1.textContent = "220 kV High-Voltage Line";
+      this.dom.inspectVal1.className = "text-accent";
+      this.dom.inspectVal2.textContent = "Transmitting Power to Districts";
+      this.dom.inspectVal3.textContent = `Grid Frequency: 50.0 Hz (Synchronized)`;
+    } else if (data.type === "DRAINAGE_PUMP") {
+      this.dom.inspectIcon.textContent = "🌀";
+      const load = this.state.latestMetrics.avg_drainage_load_pct || 25;
+      this.dom.inspectVal1.textContent = `${load}% Saturation (${data.capacity || "3,000 kL/hr"})`;
+      this.dom.inspectVal1.className = load > 75 ? "text-rose" : "text-cyan";
+      this.dom.inspectVal2.textContent = "Stormwater Flood Prevention Active";
+      this.dom.inspectVal3.textContent = `Pumps: 2 High-Flow Turbines Operational`;
     } else if (data.type === "TRAFFIC_SIGNAL") {
       this.dom.inspectIcon.textContent = "🚦";
       const state = this.state.activePolicies.emergency_green_wave ? "GREEN (EMS Corridor Override)" : data.state || "GREEN";
