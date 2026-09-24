@@ -98,6 +98,13 @@ class CitySimulatorAPIHandler(SimpleHTTPRequestHandler):
         EventBus().subscribe(EmergencyCorridorEvent, _on_event)
         EventBus().subscribe(HospitalOverloadEvent, _on_event)
 
+    def end_headers(self) -> None:
+        """Inject cache-control headers to prevent stale CSS/JS caching."""
+        self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+        self.send_header("Pragma", "no-cache")
+        self.send_header("Expires", "0")
+        super().end_headers()
+
     def _send_json(self, data: Any, status: int = HTTPStatus.OK) -> None:
         """Helper to send JSON response with proper headers."""
         payload = json.dumps(data).encode("utf-8")
@@ -107,7 +114,6 @@ class CitySimulatorAPIHandler(SimpleHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
-        self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
         self.end_headers()
         self.wfile.write(payload)
 
