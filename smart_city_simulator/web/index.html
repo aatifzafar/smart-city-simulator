@@ -6,7 +6,7 @@
   <title>Smart City Simulator — 3D Autonomous Digital Twin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 
   <!-- Three.js & OrbitControls from Fast Reliable CDNs -->
@@ -15,382 +15,407 @@
 </head>
 <body class="digital-twin-app">
 
-  <!-- =========================================================================
-       HERO 3D VIEWPORT CONTAINER (Full Screen / 75%+ Viewport)
-       ========================================================================= -->
-  <div id="city-3d-viewport" class="viewport-3d"></div>
+  <!-- Background Ambient Color Blobs for Depth -->
+  <div class="ambient-blob blob-peach"></div>
+  <div class="ambient-blob blob-pink"></div>
+  <div class="ambient-blob blob-lavender"></div>
+  <div class="ambient-blob blob-mint"></div>
 
   <!-- =========================================================================
-       FLOATING TOP COMMAND BAR (Compact Telemetry Pills)
+       MAIN FROSTED-GLASS APP CONTAINER FRAME (~32px radius)
        ========================================================================= -->
-  <header class="floating-header glass-hud">
-    <div class="brand-zone">
-      <div class="brand-pulse"></div>
-      <div class="brand-title">
-        <h1>Mini Smart City Simulator</h1>
-        <span class="badge-twin">3D DIGITAL TWIN</span>
-      </div>
-    </div>
+  <div class="app-glass-frame">
 
-    <!-- Status Telemetry Pills -->
-    <div class="header-pills">
-      <div class="telemetry-pill pill-clock">
-        <span class="pill-label">SIM TIME</span>
-        <span id="sim-clock" class="pill-val">Step 00 <small>(12:00 Day 1)</small></span>
-      </div>
-
-      <div id="policy-badge" class="telemetry-pill pill-normal">
-        <span class="indicator-dot"></span>
-        <span id="policy-text">TRAFFIC: NORMAL</span>
-      </div>
-
-      <div id="aqi-badge" class="telemetry-pill pill-good">
-        <span class="indicator-dot"></span>
-        <span id="aqi-text">AQI 35 • GOOD</span>
-      </div>
-
-      <div id="grid-badge" class="telemetry-pill pill-normal">
-        <span class="indicator-dot"></span>
-        <span id="grid-text">GRID: BALANCED</span>
-      </div>
-
-      <div id="water-badge-top" class="telemetry-pill pill-cyan">
-        <span class="indicator-dot"></span>
-        <span id="water-text-top">RESERVES: 85%</span>
-      </div>
-
-      <div id="ems-badge-top" class="telemetry-pill pill-rose">
-        <span class="indicator-dot"></span>
-        <span id="ems-text-top">EMS: STANDBY</span>
-      </div>
-    </div>
-  </header>
-
-  <!-- =========================================================================
-       FLOATING CAMERA PRESETS TOOLBAR (Cinematic Navigation)
-       ========================================================================= -->
-  <nav class="camera-toolbar glass-hud">
-    <span class="camera-title">CAMERA:</span>
-    <button class="btn-cam active" data-preset="OVERVIEW">
-      <span class="cam-icon">🌐</span> Overview
-    </button>
-    <button class="btn-cam" data-preset="TRAFFIC">
-      <span class="cam-icon">🚗</span> Traffic
-    </button>
-    <button class="btn-cam" data-preset="POWER">
-      <span class="cam-icon">⚡</span> Power Grid
-    </button>
-    <button class="btn-cam" data-preset="WATER">
-      <span class="cam-icon">💧</span> Reservoir
-    </button>
-    <button class="btn-cam" data-preset="EMERGENCY">
-      <span class="cam-icon">🚑</span> Emergency
-    </button>
-  </nav>
-
-  <!-- =========================================================================
-       FLOATING CONTEXTUAL 3D OBJECT INSPECT CARD (Interactive Raycasting)
-       ========================================================================= -->
-  <div id="inspect-card" class="inspect-card glass-hud hidden">
-    <div class="inspect-header">
-      <div class="inspect-title-wrap">
-        <span id="inspect-icon" class="inspect-icon">🏢</span>
-        <div>
-          <h3 id="inspect-name">Metro General Hospital</h3>
-          <span id="inspect-type" class="inspect-type">HEALTHCARE & EMS</span>
+    <!-- =======================================================================
+         FLOATING TOP COMMAND BAR (Header)
+         ======================================================================= -->
+    <header class="floating-header glass-hud">
+      <div class="brand-zone">
+        <!-- Sense-style glowing gradient orb (coral to pink) -->
+        <div class="brand-orb"></div>
+        <div class="brand-title">
+          <h1>Mini Smart City Simulator</h1>
+          <span class="badge-twin">3D DIGITAL TWIN</span>
         </div>
       </div>
-      <button id="btn-close-inspect" class="btn-close-hud">✕</button>
-    </div>
-    <div class="inspect-body" id="inspect-body">
-      <!-- Live dynamic key-value rows -->
-      <div class="inspect-row">
-        <span>Operating Status:</span>
-        <strong id="inspect-val-1" class="text-green">100% Operational</strong>
+
+      <!-- Status Telemetry Pills -->
+      <div class="header-pills">
+        <div class="telemetry-pill pill-clock">
+          <span class="pill-label">SIM TIME</span>
+          <span id="sim-clock" class="pill-val">Step 00 <small>(12:00 Day 1)</small></span>
+        </div>
+
+        <div id="policy-badge" class="telemetry-pill pill-normal">
+          <span class="indicator-dot"></span>
+          <span id="policy-text">TRAFFIC: NORMAL</span>
+        </div>
+
+        <div id="aqi-badge" class="telemetry-pill pill-good">
+          <span class="indicator-dot"></span>
+          <span id="aqi-text">AQI 35 • GOOD</span>
+        </div>
+
+        <div id="grid-badge" class="telemetry-pill pill-normal">
+          <span class="indicator-dot"></span>
+          <span id="grid-text">GRID: BALANCED</span>
+        </div>
+
+        <div id="water-badge-top" class="telemetry-pill pill-cyan">
+          <span class="indicator-dot"></span>
+          <span id="water-text-top">RESERVES: 85%</span>
+        </div>
+
+        <div id="ems-badge-top" class="telemetry-pill pill-rose">
+          <span class="indicator-dot"></span>
+          <span id="ems-text-top">EMS: STANDBY</span>
+        </div>
       </div>
-      <div class="inspect-row">
-        <span>Current Load / Demand:</span>
-        <strong id="inspect-val-2">60% Occupancy</strong>
+    </header>
+
+    <!-- =======================================================================
+         MAIN WORKSPACE GRID: Left Sidebar, Center Hero 3D, Right Panel
+         ======================================================================= -->
+    <main class="main-dashboard-grid">
+
+      <!-- LEFT COLUMN: Operations Console (Sidebar) -->
+      <aside class="operations-console glass-hud">
+        <div class="panel-section-title">
+          <span class="title-icon">🎛️</span>
+          <h2>Operations Console</h2>
+        </div>
+
+        <!-- Simulation Loop Controls -->
+        <div class="control-row">
+          <button id="btn-play" class="btn btn-primary">
+            <span class="btn-icon">▶</span>
+            <span id="btn-play-text">Run Auto</span>
+          </button>
+          <button id="btn-step" class="btn btn-secondary">
+            <span class="btn-icon">⏭</span>
+            <span>Step 1h</span>
+          </button>
+          <button id="btn-reset" class="btn btn-danger">
+            <span class="btn-icon">🔄</span>
+            <span>Reset</span>
+          </button>
+        </div>
+
+        <!-- Speed Slider -->
+        <div class="control-group">
+          <div class="slider-header">
+            <span class="sub-label">SIM SPEED</span>
+            <span id="speed-display" class="slider-val">350 ms</span>
+          </div>
+          <input type="range" id="slider-speed" min="50" max="1000" step="50" value="350">
+        </div>
+
+        <!-- 3D Layer Visibility Toggles -->
+        <div class="control-group">
+          <span class="group-title">3D DIGITAL TWIN LAYERS</span>
+          <div class="layers-grid">
+            <label class="layer-switch">
+              <input type="checkbox" id="layer-traffic" checked>
+              <span>🚗 Traffic</span>
+            </label>
+            <label class="layer-switch">
+              <input type="checkbox" id="layer-power" checked>
+              <span>⚡ Power</span>
+            </label>
+            <label class="layer-switch">
+              <input type="checkbox" id="layer-water" checked>
+              <span>💧 Water</span>
+            </label>
+            <label class="layer-switch">
+              <input type="checkbox" id="layer-emergency" checked>
+              <span>🚑 EMS</span>
+            </label>
+            <label class="layer-switch">
+              <input type="checkbox" id="layer-pollution" checked>
+              <span>🍃 Smog</span>
+            </label>
+            <label class="layer-switch">
+              <input type="checkbox" id="layer-waste" checked>
+              <span>♻️ Waste</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Smart Autonomous Policy Overrides -->
+        <div class="control-group">
+          <span class="group-title">AUTONOMOUS POLICY OVERRIDES</span>
+          
+          <div class="policy-item">
+            <div class="policy-desc">
+              <strong>Odd-Even Vehicle Rule</strong>
+              <span>Cuts commuter traffic ~50%</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-odd-even">
+              <span class="slider round"></span>
+            </label>
+          </div>
+
+          <div class="policy-item">
+            <div class="policy-desc">
+              <strong>Fossil Power Curtailment</strong>
+              <span>Caps gas peakers at 50%</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-curtail">
+              <span class="slider round"></span>
+            </label>
+          </div>
+
+          <div class="policy-item">
+            <div class="policy-desc">
+              <strong>Water Conservation Rationing</strong>
+              <span>35% consumption cut & recycling</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-water-rationing">
+              <span class="slider round"></span>
+            </label>
+          </div>
+
+          <div class="policy-item">
+            <div class="policy-desc">
+              <strong>EMS Green Wave Corridor</strong>
+              <span>Prioritizes green traffic signals</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-green-wave">
+              <span class="slider round"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Municipal Scale Input -->
+        <div class="control-group config-group">
+          <span class="sub-label">Districts:</span>
+          <input type="number" id="input-zones" min="1" max="8" value="3">
+          <button id="btn-apply-config" class="btn btn-outline">Apply Scale</button>
+        </div>
+      </aside>
+
+      <!-- CENTER COLUMN: Camera Toolbar & Hero 3D Card -->
+      <section class="center-stage-column">
+        <!-- Floating Camera Presets Toolbar -->
+        <nav class="camera-toolbar glass-hud">
+          <span class="camera-title">CAMERA</span>
+          <button class="btn-cam active" data-preset="OVERVIEW">
+            <span class="cam-icon">🌐</span> Overview
+          </button>
+          <button class="btn-cam" data-preset="TRAFFIC">
+            <span class="cam-icon">🚗</span> Traffic
+          </button>
+          <button class="btn-cam" data-preset="POWER">
+            <span class="cam-icon">⚡</span> Power Grid
+          </button>
+          <button class="btn-cam" data-preset="WATER">
+            <span class="cam-icon">💧</span> Reservoir
+          </button>
+          <button class="btn-cam" data-preset="EMERGENCY">
+            <span class="cam-icon">🚑</span> Emergency
+          </button>
+        </nav>
+
+        <!-- Hero 3D Viewport Card Container (Untouched 3D Canvas Inside) -->
+        <div class="hero-3d-card glass-hud">
+          <div id="city-3d-viewport" class="viewport-3d"></div>
+
+          <!-- Floating Contextual 3D Object Inspect Card -->
+          <div id="inspect-card" class="inspect-card glass-hud hidden">
+            <div class="inspect-header">
+              <div class="inspect-title-wrap">
+                <span id="inspect-icon" class="inspect-icon">🏢</span>
+                <div>
+                  <h3 id="inspect-name">Metro General Hospital</h3>
+                  <span id="inspect-type" class="inspect-type">HEALTHCARE & EMS</span>
+                </div>
+              </div>
+              <button id="btn-close-inspect" class="btn-close-hud">✕</button>
+            </div>
+            <div class="inspect-body" id="inspect-body">
+              <div class="inspect-row">
+                <span>Operating Status:</span>
+                <strong id="inspect-val-1" class="text-green">100% Operational</strong>
+              </div>
+              <div class="inspect-row">
+                <span>Current Load / Demand:</span>
+                <strong id="inspect-val-2">60% Occupancy</strong>
+              </div>
+              <div class="inspect-row">
+                <span>Emergency Readiness:</span>
+                <strong id="inspect-val-3" class="text-accent">Ambulances Ready</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT COLUMN: 2D City Map & Autonomous Event Feed -->
+      <aside class="events-feed-panel glass-hud">
+        <!-- 2D Simple City Map -->
+        <div class="minimap-section">
+          <div class="panel-section-title">
+            <div class="title-with-pulse">
+              <span class="live-dot"></span>
+              <span class="title-icon">🗺️</span>
+              <h2>2D City Map</h2>
+            </div>
+            <span class="badge-mini">LIVE 2D</span>
+          </div>
+          <div class="minimap-canvas-wrap">
+            <canvas id="city-2d-canvas" width="280" height="180"></canvas>
+          </div>
+          <div class="minimap-legend">
+            <span><i class="dot-legend dot-power"></i> Power</span>
+            <span><i class="dot-legend dot-water"></i> Water</span>
+            <span><i class="dot-legend dot-ems"></i> EMS</span>
+            <span><i class="dot-legend dot-car"></i> Cars</span>
+          </div>
+        </div>
+
+        <div class="panel-divider"></div>
+
+        <div class="panel-section-title">
+          <div class="title-with-pulse">
+            <span class="live-dot dot-coral"></span>
+            <span class="title-icon">📡</span>
+            <h2>Autonomous Event Feed</h2>
+          </div>
+          <button id="btn-clear-events" class="btn-text">Clear</button>
+        </div>
+        <div class="events-stream" id="events-stream">
+          <div class="event-entry event-info">
+            <span class="event-time">12:00</span>
+            <span class="event-badge">SYSTEM</span>
+            <span class="event-msg">3D & 2D Digital Twin connected. Subsystems operational.</span>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <!-- =======================================================================
+         BOTTOM DOCK: 6-SUBSYSTEM TELEMETRY HUD CARDS & CHARTS
+         ======================================================================= -->
+    <footer class="bottom-hud-dock glass-hud">
+      <!-- Subsystem 1: Traffic -->
+      <div class="subsystem-kpi kpi-peach" id="kpi-traffic">
+        <div class="kpi-top">
+          <div class="kpi-icon-chip">🚗</div>
+          <div class="kpi-title-wrap">
+            <span class="kpi-name">Traffic Saturation</span>
+            <strong id="val-congestion-pct" class="kpi-num text-accent">0.0%</strong>
+          </div>
+        </div>
+        <div class="kpi-bar-track">
+          <div id="bar-congestion" class="kpi-bar-fill fill-coral" style="width: 0%"></div>
+        </div>
+        <div class="kpi-meta">
+          <span>Vehicles: <strong id="val-vehicles">0</strong></span>
+          <span>Rerouted: <strong id="val-rerouted">0</strong></span>
+        </div>
       </div>
-      <div class="inspect-row">
-        <span>Emergency Readiness:</span>
-        <strong id="inspect-val-3" class="text-accent">Ambulances Ready</strong>
+
+      <!-- Subsystem 2: Energy Grid -->
+      <div class="subsystem-kpi kpi-mint" id="kpi-energy">
+        <div class="kpi-top">
+          <div class="kpi-icon-chip">⚡</div>
+          <div class="kpi-title-wrap">
+            <span class="kpi-name">Grid Demand / Supply</span>
+            <strong id="val-clean-pct" class="kpi-num text-green">0% Clean</strong>
+          </div>
+        </div>
+        <div class="kpi-bar-track">
+          <div id="bar-energy" class="kpi-bar-fill fill-green" style="width: 0%"></div>
+        </div>
+        <div class="kpi-meta">
+          <span>Demand: <strong id="val-demand">0.0 MW</strong></span>
+          <span>Emissions: <strong id="val-emissions">0 kg</strong></span>
+        </div>
       </div>
-    </div>
+
+      <!-- Subsystem 3: AQI -->
+      <div class="subsystem-kpi kpi-lavender" id="kpi-aqi">
+        <div class="kpi-top">
+          <div class="kpi-icon-chip">🍃</div>
+          <div class="kpi-title-wrap">
+            <span class="kpi-name">Air Quality Index</span>
+            <strong id="val-aqi-num" class="kpi-num text-emerald">35.0</strong>
+          </div>
+        </div>
+        <div class="kpi-bar-track">
+          <div id="bar-aqi" class="kpi-bar-fill fill-emerald" style="width: 25%"></div>
+        </div>
+        <div class="kpi-meta">
+          <span>Status: <strong id="val-aqi-status">GOOD</strong></span>
+          <span>Limit: <strong>110.0</strong></span>
+        </div>
+      </div>
+
+      <!-- Subsystem 4: Water -->
+      <div class="subsystem-kpi kpi-cyan" id="kpi-water">
+        <div class="kpi-top">
+          <div class="kpi-icon-chip">💧</div>
+          <div class="kpi-title-wrap">
+            <span class="kpi-name">Water Reservoir</span>
+            <strong id="val-water-res-pct" class="kpi-num text-cyan">85.0%</strong>
+          </div>
+        </div>
+        <div class="kpi-bar-track">
+          <div id="bar-water" class="kpi-bar-fill fill-cyan" style="width: 85%"></div>
+        </div>
+        <div class="kpi-meta">
+          <span>Demand: <strong id="val-water-demand">0 kL</strong></span>
+          <span>Drain: <strong id="val-drainage-load">25%</strong></span>
+        </div>
+      </div>
+
+      <!-- Subsystem 5: Emergency EMS -->
+      <div class="subsystem-kpi kpi-pink" id="kpi-ems">
+        <div class="kpi-top">
+          <div class="kpi-icon-chip">🚑</div>
+          <div class="kpi-title-wrap">
+            <span class="kpi-name">EMS Response Time</span>
+            <strong id="val-ems-time" class="kpi-num text-rose">7.5 min</strong>
+          </div>
+        </div>
+        <div class="kpi-bar-track">
+          <div id="bar-ems" class="kpi-bar-fill fill-rose" style="width: 40%"></div>
+        </div>
+        <div class="kpi-meta">
+          <span>Incidents: <strong id="val-incidents">0</strong></span>
+          <span>Beds: <strong id="val-hospital-beds">60%</strong></span>
+        </div>
+      </div>
+
+      <!-- Subsystem 6: Waste -->
+      <div class="subsystem-kpi kpi-purple" id="kpi-waste">
+        <div class="kpi-top">
+          <div class="kpi-icon-chip">♻️</div>
+          <div class="kpi-title-wrap">
+            <span class="kpi-name">Waste Logistics</span>
+            <strong id="val-waste-status" class="kpi-num text-purple">Normal</strong>
+          </div>
+        </div>
+        <div class="kpi-bar-track">
+          <div id="bar-waste" class="kpi-bar-fill fill-purple" style="width: 20%"></div>
+        </div>
+        <div class="kpi-meta">
+          <span>Refuse: <strong id="val-waste-gen">0 kg</strong></span>
+          <span>Overflow: <strong id="val-overflow">0</strong></span>
+        </div>
+      </div>
+
+      <!-- Toggle Mini Analytics Charts Modal Button -->
+      <button id="btn-toggle-charts" class="btn-charts-toggle" title="Toggle Live Analytics Chart">
+        <span class="charts-icon">📈</span>
+        <small>Charts</small>
+      </button>
+    </footer>
   </div>
-
-  <!-- =========================================================================
-       FLOATING OPERATIONS CONSOLE & SMART POLICY PANEL (Left Side)
-       ========================================================================= -->
-  <aside class="operations-console glass-hud">
-    <div class="panel-section-title">
-      <span class="title-icon">🎛️</span>
-      <h2>Operations Console</h2>
-    </div>
-
-    <!-- Simulation Loop Controls -->
-    <div class="control-row">
-      <button id="btn-play" class="btn btn-primary">
-        <span class="btn-icon">▶</span>
-        <span id="btn-play-text">Run Auto</span>
-      </button>
-      <button id="btn-step" class="btn btn-secondary">
-        <span class="btn-icon">⏭</span>
-        <span>Step 1h</span>
-      </button>
-      <button id="btn-reset" class="btn btn-danger">
-        <span class="btn-icon">🔄</span>
-        <span>Reset</span>
-      </button>
-    </div>
-
-    <!-- Speed Slider -->
-    <div class="control-group">
-      <div class="slider-header">
-        <span>SIM SPEED</span>
-        <span id="speed-display" class="slider-val">350 ms</span>
-      </div>
-      <input type="range" id="slider-speed" min="50" max="1000" step="50" value="350">
-    </div>
-
-    <!-- 3D Layer Visibility Toggles -->
-    <div class="control-group">
-      <span class="group-title">3D DIGITAL TWIN LAYERS</span>
-      <div class="layers-grid">
-        <label class="layer-switch">
-          <input type="checkbox" id="layer-traffic" checked>
-          <span>🚗 Traffic</span>
-        </label>
-        <label class="layer-switch">
-          <input type="checkbox" id="layer-power" checked>
-          <span>⚡ Power</span>
-        </label>
-        <label class="layer-switch">
-          <input type="checkbox" id="layer-water" checked>
-          <span>💧 Water</span>
-        </label>
-        <label class="layer-switch">
-          <input type="checkbox" id="layer-emergency" checked>
-          <span>🚑 EMS</span>
-        </label>
-        <label class="layer-switch">
-          <input type="checkbox" id="layer-pollution" checked>
-          <span>🍃 Smog Haze</span>
-        </label>
-        <label class="layer-switch">
-          <input type="checkbox" id="layer-waste" checked>
-          <span>♻️ Waste Trucks</span>
-        </label>
-      </div>
-    </div>
-
-    <!-- Smart Autonomous Policy Overrides -->
-    <div class="control-group">
-      <span class="group-title">AUTONOMOUS POLICY OVERRIDES</span>
-      
-      <div class="policy-item">
-        <div class="policy-desc">
-          <strong>Odd-Even Vehicle Rule</strong>
-          <span>Cuts commuter traffic ~50%</span>
-        </div>
-        <label class="switch">
-          <input type="checkbox" id="toggle-odd-even">
-          <span class="slider round"></span>
-        </label>
-      </div>
-
-      <div class="policy-item">
-        <div class="policy-desc">
-          <strong>Fossil Power Curtailment</strong>
-          <span>Caps gas peakers at 50%</span>
-        </div>
-        <label class="switch">
-          <input type="checkbox" id="toggle-curtail">
-          <span class="slider round"></span>
-        </label>
-      </div>
-
-      <div class="policy-item">
-        <div class="policy-desc">
-          <strong>Water Conservation Rationing</strong>
-          <span>35% consumption cut & recycling</span>
-        </div>
-        <label class="switch">
-          <input type="checkbox" id="toggle-water-rationing">
-          <span class="slider round"></span>
-        </label>
-      </div>
-
-      <div class="policy-item">
-        <div class="policy-desc">
-          <strong>EMS Green Wave Corridor</strong>
-          <span>Prioritizes green traffic signals</span>
-        </div>
-        <label class="switch">
-          <input type="checkbox" id="toggle-green-wave">
-          <span class="slider round"></span>
-        </label>
-      </div>
-    </div>
-
-    <!-- Municipal Scale Input -->
-    <div class="control-group config-group">
-      <span>Districts:</span>
-      <input type="number" id="input-zones" min="1" max="8" value="3">
-      <button id="btn-apply-config" class="btn btn-outline">Apply Scale</button>
-    </div>
-  </aside>
-
-  <!-- =========================================================================
-       RIGHT SIDE PANEL: 2D CITY MAP & AUTONOMOUS EVENT TICKER
-       ========================================================================= -->
-  <section class="events-feed-panel glass-hud">
-    <!-- 2D Simple City Map -->
-    <div class="minimap-section">
-      <div class="panel-section-title">
-        <div class="title-with-pulse">
-          <span class="live-dot"></span>
-          <span class="title-icon">🗺️</span>
-          <h2>2D City Map</h2>
-        </div>
-        <span class="badge-mini">LIVE 2D</span>
-      </div>
-      <div class="minimap-canvas-wrap">
-        <canvas id="city-2d-canvas" width="280" height="180"></canvas>
-      </div>
-      <div class="minimap-legend">
-        <span><i class="dot-legend dot-power"></i> Power</span>
-        <span><i class="dot-legend dot-water"></i> Water</span>
-        <span><i class="dot-legend dot-ems"></i> EMS</span>
-        <span><i class="dot-legend dot-car"></i> Cars</span>
-      </div>
-    </div>
-
-    <div class="panel-divider"></div>
-
-    <div class="panel-section-title">
-      <div class="title-with-pulse">
-        <span class="live-dot dot-cyan"></span>
-        <span class="title-icon">📡</span>
-        <h2>Autonomous Event Feed</h2>
-      </div>
-      <button id="btn-clear-events" class="btn-text">Clear</button>
-    </div>
-    <div class="events-stream" id="events-stream">
-      <div class="event-entry event-info">
-        <span class="event-time">12:00</span>
-        <span class="event-badge">SYSTEM</span>
-        <span class="event-msg">3D & 2D Digital Twin connected. Subsystems operational.</span>
-      </div>
-    </div>
-  </section>
-
-  <!-- =========================================================================
-       FLOATING BOTTOM DOCK: COMPACT 6-SUBSYSTEM TELEMETRY HUD & CHARTS
-       ========================================================================= -->
-  <footer class="bottom-hud-dock glass-hud">
-    <!-- Subsystem 1: Traffic -->
-    <div class="subsystem-kpi" id="kpi-traffic">
-      <div class="kpi-top">
-        <span class="kpi-icon">🚗</span>
-        <span class="kpi-name">Traffic Saturation</span>
-        <strong id="val-congestion-pct" class="kpi-num text-accent">0.0%</strong>
-      </div>
-      <div class="kpi-bar-track">
-        <div id="bar-congestion" class="kpi-bar-fill fill-blue" style="width: 0%"></div>
-      </div>
-      <div class="kpi-meta">
-        <span>Vehicles: <strong id="val-vehicles">0</strong></span>
-        <span>Rerouted: <strong id="val-rerouted">0</strong></span>
-      </div>
-    </div>
-
-    <!-- Subsystem 2: Energy Grid -->
-    <div class="subsystem-kpi" id="kpi-energy">
-      <div class="kpi-top">
-        <span class="kpi-icon">⚡</span>
-        <span class="kpi-name">Grid Demand / Supply</span>
-        <strong id="val-clean-pct" class="kpi-num text-green">0% Clean</strong>
-      </div>
-      <div class="kpi-bar-track">
-        <div id="bar-energy" class="kpi-bar-fill fill-green" style="width: 0%"></div>
-      </div>
-      <div class="kpi-meta">
-        <span>Demand: <strong id="val-demand">0.0 MW</strong></span>
-        <span>Emissions: <strong id="val-emissions">0 kg</strong></span>
-      </div>
-    </div>
-
-    <!-- Subsystem 3: AQI -->
-    <div class="subsystem-kpi" id="kpi-aqi">
-      <div class="kpi-top">
-        <span class="kpi-icon">🍃</span>
-        <span class="kpi-name">Air Quality Index</span>
-        <strong id="val-aqi-num" class="kpi-num text-emerald">35.0</strong>
-      </div>
-      <div class="kpi-bar-track">
-        <div id="bar-aqi" class="kpi-bar-fill fill-emerald" style="width: 25%"></div>
-      </div>
-      <div class="kpi-meta">
-        <span>Status: <strong id="val-aqi-status">GOOD</strong></span>
-        <span>Threshold: <strong>110.0</strong></span>
-      </div>
-    </div>
-
-    <!-- Subsystem 4: Water -->
-    <div class="subsystem-kpi" id="kpi-water">
-      <div class="kpi-top">
-        <span class="kpi-icon">💧</span>
-        <span class="kpi-name">Water Reservoir</span>
-        <strong id="val-water-res-pct" class="kpi-num text-cyan">85.0%</strong>
-      </div>
-      <div class="kpi-bar-track">
-        <div id="bar-water" class="kpi-bar-fill fill-cyan" style="width: 85%"></div>
-      </div>
-      <div class="kpi-meta">
-        <span>Demand: <strong id="val-water-demand">0 kL</strong></span>
-        <span>Drainage: <strong id="val-drainage-load">25%</strong></span>
-      </div>
-    </div>
-
-    <!-- Subsystem 5: Emergency EMS -->
-    <div class="subsystem-kpi" id="kpi-ems">
-      <div class="kpi-top">
-        <span class="kpi-icon">🚑</span>
-        <span class="kpi-name">EMS Response Time</span>
-        <strong id="val-ems-time" class="kpi-num text-rose">7.5 min</strong>
-      </div>
-      <div class="kpi-bar-track">
-        <div id="bar-ems" class="kpi-bar-fill fill-rose" style="width: 40%"></div>
-      </div>
-      <div class="kpi-meta">
-        <span>Incidents: <strong id="val-incidents">0</strong></span>
-        <span>Hospital Beds: <strong id="val-hospital-beds">60%</strong></span>
-      </div>
-    </div>
-
-    <!-- Subsystem 6: Waste -->
-    <div class="subsystem-kpi" id="kpi-waste">
-      <div class="kpi-top">
-        <span class="kpi-icon">♻️</span>
-        <span class="kpi-name">Waste Logistics</span>
-        <strong id="val-waste-status" class="kpi-num text-purple">Normal</strong>
-      </div>
-      <div class="kpi-bar-track">
-        <div id="bar-waste" class="kpi-bar-fill fill-purple" style="width: 20%"></div>
-      </div>
-      <div class="kpi-meta">
-        <span>Refuse: <strong id="val-waste-gen">0 kg</strong></span>
-        <span>Overflows: <strong id="val-overflow">0</strong></span>
-      </div>
-    </div>
-
-    <!-- Toggle Mini Analytics Charts Modal Button -->
-    <button id="btn-toggle-charts" class="btn-charts-toggle" title="Toggle Live Analytics Chart">
-      <span>📈</span>
-      <small>Charts</small>
-    </button>
-  </footer>
 
   <!-- =========================================================================
        EXPANDABLE TELEMETRY TIME-SERIES CHARTS MODAL / OVERLAY
@@ -398,7 +423,7 @@
   <div id="charts-modal" class="charts-modal glass-hud hidden">
     <div class="charts-modal-header">
       <div class="modal-title">
-        <span>📈</span>
+        <span class="modal-title-icon">📈</span>
         <h3>Real-Time Multi-Subsystem Telemetry Curves</h3>
       </div>
       <div class="chart-tabs">

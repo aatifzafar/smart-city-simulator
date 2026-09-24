@@ -627,8 +627,8 @@ class SmartCityApp {
 
     const history = this.state.history;
     if (!history || history.length < 2) {
-      ctx.fillStyle = '#64748b';
-      ctx.font = '12px Outfit, sans-serif';
+      ctx.fillStyle = '#8c8898';
+      ctx.font = '12px Poppins, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText('Advancing simulation generates live multi-subsystem telemetry curves...', w / 2, h / 2);
       return;
@@ -645,7 +645,7 @@ class SmartCityApp {
     const getX = (idx) => padLeft + (idx / maxSteps) * plotW;
 
     // Grid lines
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+    ctx.strokeStyle = 'rgba(140, 136, 152, 0.15)';
     ctx.lineWidth = 1;
     for (let s = 0; s <= 4; s++) {
       const y = padTop + (s / 4) * plotH;
