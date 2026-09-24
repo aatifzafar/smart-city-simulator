@@ -34,6 +34,39 @@ from .environment import (
     PollutionAlertEvent,
     PolicyChangeEvent,
 )
+from .water import (
+    WaterReservoir,
+    DrainagePumpStation,
+    WaterManagementSystem,
+    WaterDeficitEvent,
+    DrainageOverflowEvent,
+)
+from .emergency import (
+    Hospital,
+    EmergencyIncident,
+    IncidentSeverity,
+    EmergencyServicesSystem,
+    EmergencyCorridorEvent,
+    HospitalOverloadEvent,
+)
+
+from .transit import (
+    TransitRoute,
+    PublicTransportSystem,
+    TransitDelayEvent,
+)
+from .concurrency import (
+    EventStreamIterator,
+    EventPipeline,
+    SubsystemWorkerThread,
+    ConcurrentCityEngine,
+    traffic_event_generator,
+    electricity_event_generator,
+    water_event_generator,
+    emergency_event_generator,
+    waste_event_generator,
+    transit_event_generator,
+)
 
 __all__ = [
     "BaseSubsystem",
@@ -63,4 +96,29 @@ __all__ = [
     "EnvironmentMonitor",
     "PollutionAlertEvent",
     "PolicyChangeEvent",
+    "WaterReservoir",
+    "DrainagePumpStation",
+    "WaterManagementSystem",
+    "WaterDeficitEvent",
+    "DrainageOverflowEvent",
+    "Hospital",
+    "EmergencyIncident",
+    "IncidentSeverity",
+    "EmergencyServicesSystem",
+    "EmergencyCorridorEvent",
+    "HospitalOverloadEvent",
+    "TransitRoute",
+    "PublicTransportSystem",
+    "TransitDelayEvent",
+    "EventStreamIterator",
+    "EventPipeline",
+    "SubsystemWorkerThread",
+    "ConcurrentCityEngine",
+    "traffic_event_generator",
+    "electricity_event_generator",
+    "water_event_generator",
+    "emergency_event_generator",
+    "waste_event_generator",
+    "transit_event_generator",
 ]
+

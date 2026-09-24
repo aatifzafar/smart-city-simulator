@@ -26,6 +26,7 @@ class SimulationLogger:
         "rerouted_vehicles",
         "congested_roads",
         "odd_even_active",
+        "green_wave_active",
         "energy_usage",
         "energy_supply",
         "renewable_mw",
@@ -38,6 +39,18 @@ class SimulationLogger:
         "aqi",
         "high_pollution",
         "severity",
+        "water_consumption_kl",
+        "water_demand_kl",
+        "water_deficit_kl",
+        "reservoir_level_pct",
+        "drainage_overflows",
+        "avg_drainage_load_pct",
+        "water_rationing_active",
+        "emergency_incidents",
+        "critical_incidents",
+        "avg_response_time_min",
+        "avg_hospital_occupancy",
+        "overloaded_hospitals",
     ]
 
     def __init__(self, log_path: Path, json_path: Optional[Path] = None) -> None:

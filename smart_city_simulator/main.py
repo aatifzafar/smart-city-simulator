@@ -11,6 +11,12 @@ from pathlib import Path
 import random
 import sys
 
+# Ensure UTF-8 output encoding for terminals across platforms (especially Windows)
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 from smart_city_simulator.city.controller import CityController
 from smart_city_simulator.exceptions import SmartCityError, InvalidConfigError
 from smart_city_simulator.utils.logger import SimulationLogger
@@ -80,6 +86,11 @@ def build_parser() -> argparse.ArgumentParser:
         default=8000,
         help="HTTP port to bind the web dashboard server on (default: 8000).",
     )
+    parser.add_argument(
+        "--threaded",
+        action="store_true",
+        help="Demonstrate CO-5 Multithreading: run subsystems concurrently with producer threads and Queue.",
+    )
     return parser
 
 
@@ -136,7 +147,15 @@ def main() -> None:
             alert_threshold=args.alert_threshold,
         )
 
-        controller.run_simulation(total_steps=args.steps)
+        if args.threaded:
+            print(f"🚀 [CO-5 Multithreading Mode] Starting Concurrent Subsystem Engine ({args.steps} steps)...")
+            controller.concurrent_engine.start()
+            for step in range(1, args.steps + 1):
+                controller.step(step_idx=step)
+            drain_results = controller.concurrent_engine.drain_event_queue()
+            print(f"✅ Multithreaded execution complete. Drained {len(drain_results)} async events safely across threads.")
+        else:
+            controller.run_simulation(total_steps=args.steps)
 
     except SmartCityError as err:
         print(f"\n[SmartCity Simulation Error]: {err}", file=sys.stderr)

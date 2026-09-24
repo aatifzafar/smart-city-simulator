@@ -25,6 +25,9 @@ class Visualizer:
         "dark_green": "#31a354",
         "purple": "#bcbddc",
         "dark_purple": "#756bb1",
+        "cyan": "#41b6c4",
+        "dark_cyan": "#225ea8",
+        "pink": "#fa9fb5",
         "gray": "#bdbdbd",
         "bg_alert": "#fee6ce",
         "alert_red": "#de2d26",
@@ -73,15 +76,18 @@ class Visualizer:
         blackouts = [record.get("blackout", 0) for record in time_series]
 
         aqi = [record["aqi"] for record in time_series]
-        waste_gen = [record["total_waste_kg"] for record in time_series]
-        waste_collected = [record["collected_waste_kg"] for record in time_series]
+        
+        # New subsystem metrics
+        reservoir_pct = [record.get("reservoir_level_pct", 85.0) for record in time_series]
+        drainage_pct = [record.get("avg_drainage_load_pct", 30.0) for record in time_series]
+        resp_time = [record.get("avg_response_time_min", 8.0) for record in time_series]
 
-        fig, axes = plt.subplots(3, 1, figsize=(14, 11), sharex=True)
+        fig, axes = plt.subplots(4, 1, figsize=(14, 14), sharex=True)
         fig.suptitle(
-            "Mini Smart City Simulator - Multi-Subsystem Performance & Emergent Policy Dashboard",
+            "Mini Smart City Simulator — Multi-Subsystem Performance & Emergent Policy Dashboard",
             fontsize=15,
             fontweight="bold",
-            y=0.98,
+            y=0.99,
         )
 
         # -----------------------------------------------------------------
@@ -95,8 +101,8 @@ class Visualizer:
             linewidth=2.2,
             label="Avg Road Congestion (0.0-1.0)",
         )
-        ax1.axhline(0.75, color=self.PALETTE["alert_red"], linestyle="--", alpha=0.6, label="Congestion Alert Threshold (75%)")
-        ax1.set_ylabel("Congestion Ratio", fontsize=11, fontweight="semibold")
+        ax1.axhline(0.75, color=self.PALETTE["alert_red"], linestyle="--", alpha=0.6, label="Congestion Alert (75%)")
+        ax1.set_ylabel("Congestion Ratio", fontsize=10, fontweight="semibold")
         ax1.set_ylim(0, max(1.1, max(congestion) * 1.15))
         ax1.grid(True, linestyle="--", alpha=0.5)
 
@@ -111,7 +117,7 @@ class Visualizer:
             alpha=0.75,
             label="Active Commuter Vehicles",
         )
-        ax1_twin.set_ylabel("Vehicle Count", fontsize=10, color=self.PALETTE["dark_purple"])
+        ax1_twin.set_ylabel("Vehicle Count", fontsize=9, color=self.PALETTE["dark_purple"])
         ax1_twin.tick_params(colors=self.PALETTE["dark_purple"])
 
         # Highlight odd-even rule activation intervals
@@ -129,60 +135,85 @@ class Visualizer:
         for start, end in active_spans:
             ax1.axvspan(start, end, color=self.PALETTE["bg_alert"], alpha=0.6, label="Odd-Even Policy Active")
 
-        # Deduplicate legends
         lines1, labels1 = ax1.get_legend_handles_labels()
         lines2, labels2 = ax1_twin.get_legend_handles_labels()
         by_label = dict(zip(labels1 + labels2, lines1 + lines2))
-        ax1.legend(by_label.values(), by_label.keys(), loc="upper left", framealpha=0.85, fontsize=9)
-        ax1.set_title("Traffic Subsystem: Congestion Dynamics & Restriction Policy", fontsize=12, pad=6)
+        ax1.legend(by_label.values(), by_label.keys(), loc="upper left", framealpha=0.85, fontsize=8)
+        ax1.set_title("Traffic Subsystem: Congestion Dynamics & Restriction Policy", fontsize=11, pad=4)
 
         # -----------------------------------------------------------------
         # Panel 2: Energy Grid Dispatch & Load Balancing
         # -----------------------------------------------------------------
         ax2 = axes[1]
         ax2.plot(steps, energy_demand, color=self.PALETTE["orange"], linewidth=2.0, label="Demand Load (MW)")
-        ax2.plot(steps, energy_supply, color=self.PALETTE["dark_green"], linewidth=2.0, label="Total Supply Dispatched (MW)")
+        ax2.plot(steps, energy_supply, color=self.PALETTE["dark_green"], linewidth=2.0, label="Dispatched Supply (MW)")
         ax2.fill_between(steps, 0, renewable, color=self.PALETTE["green"], alpha=0.35, label="Clean Renewable (Solar/Wind)")
 
-        # Mark any blackouts
         blackout_steps = [s for s, b in zip(steps, blackouts) if b]
         if blackout_steps:
             ax2.scatter(
                 blackout_steps,
                 [energy_demand[s] for s in blackout_steps],
                 color=self.PALETTE["alert_red"],
-                s=70,
+                s=60,
                 zorder=5,
                 marker="X",
                 label="Blackout Deficit Event",
             )
 
-        ax2.set_ylabel("Power (MW)", fontsize=11, fontweight="semibold")
+        ax2.set_ylabel("Power (MW)", fontsize=10, fontweight="semibold")
         ax2.grid(True, linestyle="--", alpha=0.5)
-        ax2.legend(loc="upper left", framealpha=0.85, fontsize=9)
-        ax2.set_title("Energy Grid: Merit-Order Green Generation & Load Balancing", fontsize=12, pad=6)
+        ax2.legend(loc="upper left", framealpha=0.85, fontsize=8)
+        ax2.set_title("Energy Grid: Merit-Order Green Generation & Load Balancing", fontsize=11, pad=4)
 
         # -----------------------------------------------------------------
-        # Panel 3: Environmental Air Quality Index (AQI) & Waste
+        # Panel 3: Environmental Air Quality Index (AQI)
         # -----------------------------------------------------------------
         ax3 = axes[2]
-        ax3.plot(steps, aqi, color=self.PALETTE["red"], linewidth=2.4, label="Air Quality Index (AQI)")
-        ax3.axhline(110.0, color=self.PALETTE["alert_red"], linestyle="--", linewidth=1.5, label="Policy Trigger Threshold (AQI 110)")
-        ax3.axhline(80.0, color=self.PALETTE["dark_green"], linestyle=":", linewidth=1.5, label="Clear Return Threshold (AQI 80)")
-        ax3.set_ylabel("Air Quality Index (AQI)", fontsize=11, fontweight="semibold")
-        ax3.set_xlabel("Simulation Time Step (Simulated Hours)", fontsize=11, fontweight="semibold")
+        ax3.plot(steps, aqi, color=self.PALETTE["red"], linewidth=2.2, label="Air Quality Index (AQI)")
+        ax3.axhline(110.0, color=self.PALETTE["alert_red"], linestyle="--", linewidth=1.3, label="Alert Threshold (AQI 110)")
+        ax3.axhline(80.0, color=self.PALETTE["dark_green"], linestyle=":", linewidth=1.3, label="Safe Threshold (AQI 80)")
+        ax3.set_ylabel("Air Quality (AQI)", fontsize=10, fontweight="semibold")
         ax3.set_ylim(0, max(160, max(aqi) * 1.15))
         ax3.grid(True, linestyle="--", alpha=0.5)
+        ax3.axhspan(110.0, max(180, max(aqi) * 1.2), color="#fee0d2", alpha=0.35, label="Unhealthy Air Zone")
 
-        # Highlight unhealthy region
-        ax3.axhspan(110.0, max(180, max(aqi) * 1.2), color="#fee0d2", alpha=0.4, label="Unhealthy / Alert Air Zone")
-
-        # Shade policy period in environmental graph as well
         for start, end in active_spans:
-            ax3.axvspan(start, end, color=self.PALETTE["bg_alert"], alpha=0.5)
+            ax3.axvspan(start, end, color=self.PALETTE["bg_alert"], alpha=0.4)
 
-        ax3.legend(loc="upper left", framealpha=0.85, fontsize=9)
-        ax3.set_title("Environmental Monitor: Atmospheric Pollution & Policy Triggers", fontsize=12, pad=6)
+        ax3.legend(loc="upper left", framealpha=0.85, fontsize=8)
+        ax3.set_title("Environmental Monitor: Atmospheric Pollution & Emergency Triggers", fontsize=11, pad=4)
+
+        # -----------------------------------------------------------------
+        # Panel 4: Smart Water Reservoir & Emergency Response
+        # -----------------------------------------------------------------
+        ax4 = axes[3]
+        ax4.plot(steps, reservoir_pct, color=self.PALETTE["dark_cyan"], linewidth=2.2, label="Reservoir Level (%)")
+        ax4.plot(steps, drainage_pct, color=self.PALETTE["cyan"], linestyle="--", linewidth=1.8, label="Avg Drainage Load (%)")
+        ax4.axhline(25.0, color=self.PALETTE["alert_red"], linestyle=":", label="Water Rationing Threshold (25%)")
+        ax4.set_ylabel("Water / Drainage %", fontsize=10, fontweight="semibold")
+        ax4.set_ylim(0, 110)
+        ax4.grid(True, linestyle="--", alpha=0.5)
+
+        # Twin axis for EMS Response Time
+        ax4_twin = ax4.twinx()
+        ax4_twin.plot(
+            steps,
+            resp_time,
+            color=self.PALETTE["red"],
+            linestyle="-.",
+            linewidth=1.8,
+            label="Avg EMS Response Time (min)",
+        )
+        ax4_twin.set_ylabel("EMS Time (min)", fontsize=9, color=self.PALETTE["red"])
+        ax4_twin.tick_params(colors=self.PALETTE["red"])
+        ax4.set_xlabel("Simulation Time Step (Simulated Hours)", fontsize=11, fontweight="semibold")
+
+        lines_w1, labels_w1 = ax4.get_legend_handles_labels()
+        lines_w2, labels_w2 = ax4_twin.get_legend_handles_labels()
+        by_label_w = dict(zip(lines_w1 + lines_w2, labels_w1 + labels_w2))
+        ax4.legend(by_label_w.keys(), by_label_w.values(), loc="upper left", framealpha=0.85, fontsize=8)
+        ax4.set_title("Water & Public Safety: Reservoir Reserves, Drainage & EMS Response Time", fontsize=11, pad=4)
 
         plt.tight_layout()
 

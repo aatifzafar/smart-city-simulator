@@ -1,12 +1,14 @@
 /**
- * Mini Smart City Simulator — Frontend Client & Canvas Visualization Engine
+ * Mini Smart City Simulator — Frontend Application Controller
+ * Orchestrates REST API polling, simulation loop, UI telemetry HUDs,
+ * and synchronizes state with the Three.js 3D WebGL Digital Twin Engine.
  */
 
 class SmartCityApp {
   constructor() {
     this.state = {
       step: 0,
-      hour: 0,
+      hour: 12,
       isPlaying: false,
       speedMs: 350,
       activeChartTab: 'all',
@@ -17,21 +19,20 @@ class SmartCityApp {
       activePolicies: {
         odd_even_rule: false,
         curtail_nonrenewable: false,
-      },
-      layers: {
-        vehicles: true,
-        signals: true,
-        power: true,
-        haze: true,
+        water_rationing_rule: false,
+        emergency_green_wave: false,
       },
     };
 
     this.timerId = null;
-    this.animationFrameId = null;
-    this.particleTime = 0;
+    this.city3d = null;
 
-    // DOM Elements
+    // DOM Elements Mapping
     this.dom = {
+      // 3D Viewport
+      viewport3d: document.getElementById('city-3d-viewport'),
+
+      // Top Bar Status Pills
       simClock: document.getElementById('sim-clock'),
       policyBadge: document.getElementById('policy-badge'),
       policyText: document.getElementById('policy-text'),
@@ -39,31 +40,10 @@ class SmartCityApp {
       aqiText: document.getElementById('aqi-text'),
       gridBadge: document.getElementById('grid-badge'),
       gridText: document.getElementById('grid-text'),
-
-      // KPI Elements
-      metricCongestion: document.getElementById('metric-congestion'),
-      congestionBar: document.getElementById('congestion-bar'),
-      valVehicles: document.getElementById('val-vehicles'),
-      valRerouted: document.getElementById('val-rerouted'),
-      trafficBadge: document.getElementById('traffic-percent-badge'),
-
-      metricDemand: document.getElementById('metric-demand'),
-      energyBar: document.getElementById('energy-bar'),
-      valSupply: document.getElementById('val-supply'),
-      valEmissions: document.getElementById('val-emissions'),
-      energyCleanBadge: document.getElementById('energy-clean-badge'),
-
-      metricAqi: document.getElementById('metric-aqi'),
-      aqiBar: document.getElementById('aqi-bar'),
-      valAqiTraffic: document.getElementById('val-aqi-traffic'),
-      valAqiEnergy: document.getElementById('val-aqi-energy'),
-      aqiCatBadge: document.getElementById('aqi-category-badge'),
-
-      metricWaste: document.getElementById('metric-waste'),
-      wasteBar: document.getElementById('waste-bar'),
-      valWasteCollected: document.getElementById('val-waste-collected'),
-      valOverflow: document.getElementById('val-overflow'),
-      wasteBadge: document.getElementById('waste-badge'),
+      waterBadgeTop: document.getElementById('water-badge-top'),
+      waterTextTop: document.getElementById('water-text-top'),
+      emsBadgeTop: document.getElementById('ems-badge-top'),
+      emsTextTop: document.getElementById('ems-text-top'),
 
       // Controls
       btnPlay: document.getElementById('btn-play'),
@@ -76,56 +56,85 @@ class SmartCityApp {
       btnApplyConfig: document.getElementById('btn-apply-config'),
       toggleOddEven: document.getElementById('toggle-odd-even'),
       toggleCurtail: document.getElementById('toggle-curtail'),
+      toggleWaterRationing: document.getElementById('toggle-water-rationing'),
+      toggleGreenWave: document.getElementById('toggle-green-wave'),
       eventsStream: document.getElementById('events-stream'),
       btnClearEvents: document.getElementById('btn-clear-events'),
 
-      // Subsystem health
-      statStrategy: document.getElementById('stat-strategy'),
-      statRenewShare: document.getElementById('stat-renew-share'),
-      statFleet: document.getElementById('stat-fleet'),
-      statEmergency: document.getElementById('stat-emergency'),
+      // Context Inspect HUD
+      inspectCard: document.getElementById('inspect-card'),
+      inspectName: document.getElementById('inspect-name'),
+      inspectType: document.getElementById('inspect-type'),
+      inspectIcon: document.getElementById('inspect-icon'),
+      inspectVal1: document.getElementById('inspect-val-1'),
+      inspectVal2: document.getElementById('inspect-val-2'),
+      inspectVal3: document.getElementById('inspect-val-3'),
+      btnCloseInspect: document.getElementById('btn-close-inspect'),
 
-      // Canvases
-      cityCanvas: document.getElementById('city-canvas'),
+      // Bottom Dock KPIs
+      valCongestionPct: document.getElementById('val-congestion-pct'),
+      barCongestion: document.getElementById('bar-congestion'),
+      valVehicles: document.getElementById('val-vehicles'),
+      valRerouted: document.getElementById('val-rerouted'),
+
+      valCleanPct: document.getElementById('val-clean-pct'),
+      barEnergy: document.getElementById('bar-energy'),
+      valDemand: document.getElementById('val-demand'),
+      valEmissions: document.getElementById('val-emissions'),
+
+      valAqiNum: document.getElementById('val-aqi-num'),
+      barAqi: document.getElementById('bar-aqi'),
+      valAqiStatus: document.getElementById('val-aqi-status'),
+
+      valWaterResPct: document.getElementById('val-water-res-pct'),
+      barWater: document.getElementById('bar-water'),
+      valWaterDemand: document.getElementById('val-water-demand'),
+      valDrainageLoad: document.getElementById('val-drainage-load'),
+
+      valEmsTime: document.getElementById('val-ems-time'),
+      barEms: document.getElementById('bar-ems'),
+      valIncidents: document.getElementById('val-incidents'),
+      valHospitalBeds: document.getElementById('val-hospital-beds'),
+
+      valWasteStatus: document.getElementById('val-waste-status'),
+      barWaste: document.getElementById('bar-waste'),
+      valWasteGen: document.getElementById('val-waste-gen'),
+      valOverflow: document.getElementById('val-overflow'),
+
+      // Charts Modal
+      btnToggleCharts: document.getElementById('btn-toggle-charts'),
+      chartsModal: document.getElementById('charts-modal'),
+      btnCloseCharts: document.getElementById('btn-close-charts'),
       telemetryCanvas: document.getElementById('telemetry-chart'),
     };
 
-    this.cityCtx = this.dom.cityCanvas.getContext('2d');
-    this.chartCtx = this.dom.telemetryCanvas.getContext('2d');
+    if (this.dom.telemetryCanvas) {
+      this.chartCtx = this.dom.telemetryCanvas.getContext('2d');
+    }
 
     this.init();
   }
 
   async init() {
-    this.setupEventListeners();
-    this.setupCanvasDPI(this.dom.cityCanvas, this.cityCtx);
-    this.setupCanvasDPI(this.dom.telemetryCanvas, this.chartCtx);
+    // 1. Initialize 3D Digital Twin Engine
+    if (window.City3DEngine) {
+      this.city3d = new window.City3DEngine(
+        this.dom.viewport3d,
+        (objectData, simState) => this.handleObjectSelected(objectData, simState)
+      );
+    }
 
+    // 2. Setup Event Listeners
+    this.setupEventListeners();
+
+    // 3. Initial Fetch
     await this.fetchLayout();
     await this.fetchStatus();
     await this.fetchHistory();
-
-    // Start 60fps canvas animation loop
-    this.startCanvasAnimation();
-  }
-
-  setupCanvasDPI(canvas, ctx) {
-    const dpr = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-    ctx.scale(dpr, dpr);
   }
 
   setupEventListeners() {
-    // Window Resize
-    window.addEventListener('resize', () => {
-      this.setupCanvasDPI(this.dom.cityCanvas, this.cityCtx);
-      this.setupCanvasDPI(this.dom.telemetryCanvas, this.chartCtx);
-      this.renderTelemetryChart();
-    });
-
-    // Play/Pause
+    // Play/Pause & Step
     this.dom.btnPlay.addEventListener('click', () => this.togglePlay());
     this.dom.btnStep.addEventListener('click', () => this.step());
     this.dom.btnReset.addEventListener('click', () => this.resetSimulation());
@@ -147,6 +156,31 @@ class SmartCityApp {
       }
     });
 
+    // Camera Preset Buttons
+    document.querySelectorAll('.btn-cam').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.btn-cam').forEach((b) => b.classList.remove('active'));
+        const targetBtn = e.currentTarget;
+        targetBtn.classList.add('active');
+        const preset = targetBtn.getAttribute('data-preset');
+        if (this.city3d) {
+          this.city3d.setCameraPreset(preset);
+        }
+      });
+    });
+
+    // 3D Layer Visibility Switches
+    ['traffic', 'power', 'water', 'emergency', 'pollution', 'waste'].forEach((layer) => {
+      const el = document.getElementById(`layer-${layer}`);
+      if (el) {
+        el.addEventListener('change', (e) => {
+          if (this.city3d) {
+            this.city3d.setLayerVisibility(layer, e.target.checked);
+          }
+        });
+      }
+    });
+
     // Policy Toggles
     this.dom.toggleOddEven.addEventListener('change', (e) => {
       this.setPolicy('odd_even_rule', e.target.checked);
@@ -154,24 +188,35 @@ class SmartCityApp {
     this.dom.toggleCurtail.addEventListener('change', (e) => {
       this.setPolicy('curtail_nonrenewable', e.target.checked);
     });
+    this.dom.toggleWaterRationing.addEventListener('change', (e) => {
+      this.setPolicy('water_rationing_rule', e.target.checked);
+    });
+    this.dom.toggleGreenWave.addEventListener('change', (e) => {
+      this.setPolicy('emergency_green_wave', e.target.checked);
+    });
 
     // Clear Events
     this.dom.btnClearEvents.addEventListener('click', () => {
       this.dom.eventsStream.innerHTML = '';
     });
 
-    // Layer Toggles
-    document.getElementById('layer-vehicles').addEventListener('change', (e) => {
-      this.state.layers.vehicles = e.target.checked;
+    // Close Inspect Card
+    this.dom.btnCloseInspect.addEventListener('click', () => {
+      this.dom.inspectCard.classList.add('hidden');
+      if (this.city3d && this.city3d.highlightRing) {
+        this.city3d.highlightRing.visible = false;
+      }
     });
-    document.getElementById('layer-signals').addEventListener('change', (e) => {
-      this.state.layers.signals = e.target.checked;
+
+    // Toggle Charts Modal
+    this.dom.btnToggleCharts.addEventListener('click', () => {
+      this.dom.chartsModal.classList.toggle('hidden');
+      if (!this.dom.chartsModal.classList.contains('hidden')) {
+        this.renderTelemetryChart();
+      }
     });
-    document.getElementById('layer-power').addEventListener('change', (e) => {
-      this.state.layers.power = e.target.checked;
-    });
-    document.getElementById('layer-haze').addEventListener('change', (e) => {
-      this.state.layers.haze = e.target.checked;
+    this.dom.btnCloseCharts.addEventListener('click', () => {
+      this.dom.chartsModal.classList.add('hidden');
     });
 
     // Chart Tabs
@@ -179,94 +224,198 @@ class SmartCityApp {
       tab.addEventListener('click', (e) => {
         document.querySelectorAll('.chart-tab').forEach((t) => t.classList.remove('active'));
         e.target.classList.add('active');
-        this.state.activeChartTab = e.target.dataset.chart;
+        this.state.activeChartTab = e.target.getAttribute('data-chart');
         this.renderTelemetryChart();
       });
     });
   }
 
   // -------------------------------------------------------------------------
-  // API Network Calls
+  // Contextual Raycast Selection Handler
   // -------------------------------------------------------------------------
 
-  async fetchStatus() {
-    try {
-      const res = await fetch('/api/status');
-      const data = await res.json();
-      this.state.step = data.step;
-      this.state.hour = data.hour_of_day;
-      this.state.activePolicies = data.active_policies || {};
-      this.state.latestMetrics = data.latest_metrics || {};
+  handleObjectSelected(data, simState) {
+    if (!data) return;
 
-      this.updateHUD(data);
-    } catch (err) {
-      console.error('Status fetch error:', err);
+    this.dom.inspectName.textContent = data.name || "Municipal Infrastructure";
+    this.dom.inspectType.textContent = (data.type || "INFRASTRUCTURE").replace(/_/g, " ");
+
+    if (data.type === "HOSPITAL") {
+      this.dom.inspectIcon.textContent = "🏥";
+      this.dom.inspectVal1.textContent = "100% Operational (ICU Ready)";
+      this.dom.inspectVal1.className = "text-green";
+      this.dom.inspectVal2.textContent = `${this.state.latestMetrics.avg_hospital_occupancy || 60}% Beds Occupied`;
+      this.dom.inspectVal3.textContent = `Avg Response: ${this.state.latestMetrics.avg_response_time_min || 7.5} min`;
+    } else if (data.type === "SOLAR_FARM") {
+      this.dom.inspectIcon.textContent = "☀️";
+      this.dom.inspectVal1.textContent = `${this.state.latestMetrics.renewable_mw || 3.5} MW Clean Output`;
+      this.dom.inspectVal1.className = "text-green";
+      this.dom.inspectVal2.textContent = "Zero Carbon Emissions";
+      this.dom.inspectVal3.textContent = `Supply Share: ${this.state.latestMetrics.energy_supply ? Math.round((this.state.latestMetrics.renewable_mw / this.state.latestMetrics.energy_supply) * 100) : 40}%`;
+    } else if (data.type === "GAS_POWER_PLANT") {
+      this.dom.inspectIcon.textContent = "🏭";
+      const curtailed = this.state.activePolicies.curtail_nonrenewable;
+      this.dom.inspectVal1.textContent = curtailed ? "CURTAILED (50% Cap)" : "Active Peaker (Standard)";
+      this.dom.inspectVal1.className = curtailed ? "text-rose" : "text-accent";
+      this.dom.inspectVal2.textContent = `Output: ${this.state.latestMetrics.non_renewable_mw || 2.5} MW`;
+      this.dom.inspectVal3.textContent = `Hourly Emissions: ${Math.round(this.state.latestMetrics.emissions_kg || 0)} kg`;
+    } else if (data.type === "WATER_RESERVOIR") {
+      this.dom.inspectIcon.textContent = "💧";
+      const resPct = this.state.latestMetrics.reservoir_level_pct !== undefined ? this.state.latestMetrics.reservoir_level_pct : 85.0;
+      this.dom.inspectVal1.textContent = `${resPct.toFixed(1)}% Capacity (${data.capacity || "15,000 kL"})`;
+      this.dom.inspectVal1.className = resPct < 25 ? "text-rose" : "text-cyan";
+      this.dom.inspectVal2.textContent = `Consumption: ${Math.round(this.state.latestMetrics.water_consumption_kl || 0)} kL/hr`;
+      this.dom.inspectVal3.textContent = `Drainage Load: ${this.state.latestMetrics.avg_drainage_load_pct || 25}%`;
+    } else if (data.type === "TRAFFIC_SIGNAL") {
+      this.dom.inspectIcon.textContent = "🚦";
+      const state = this.state.activePolicies.emergency_green_wave ? "GREEN (EMS Corridor Override)" : data.state || "GREEN";
+      this.dom.inspectVal1.textContent = `Signal State: ${state}`;
+      this.dom.inspectVal1.className = state.includes("GREEN") ? "text-green" : "text-rose";
+      this.dom.inspectVal2.textContent = `Congestion: ${(this.state.latestMetrics.traffic_congestion * 100 || 0).toFixed(1)}%`;
+      this.dom.inspectVal3.textContent = `Active Commuters: ${this.state.latestMetrics.total_vehicles || 0}`;
     }
+
+    this.dom.inspectCard.classList.remove('hidden');
   }
+
+  // -------------------------------------------------------------------------
+  // REST API Actions
+  // -------------------------------------------------------------------------
 
   async fetchLayout() {
     try {
       const res = await fetch('/api/city_layout');
-      this.state.layout = await res.json();
+      if (res.ok) {
+        this.state.layout = await res.json();
+      }
     } catch (err) {
-      console.error('Layout fetch error:', err);
+      console.warn('Failed to fetch layout:', err);
+    }
+  }
+
+  async fetchStatus() {
+    try {
+      const res = await fetch('/api/status');
+      if (res.ok) {
+        const data = await res.json();
+        this.state.step = data.step;
+        this.state.hour = data.hour_of_day;
+        this.state.latestMetrics = data.latest_metrics || {};
+        this.state.activePolicies = data.active_policies || this.state.activePolicies;
+
+        this.updateHUD(data);
+
+        if (this.city3d) {
+          this.city3d.syncSimulationState(this.state.latestMetrics, this.state.layout, data);
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to fetch status:', err);
     }
   }
 
   async fetchHistory() {
     try {
       const res = await fetch('/api/history');
-      const data = await res.json();
-      this.state.history = data.history || [];
-      this.renderTelemetryChart();
+      if (res.ok) {
+        const data = await res.json();
+        this.state.history = data.history || [];
+        this.renderTelemetryChart();
+      }
     } catch (err) {
-      console.error('History fetch error:', err);
+      console.warn('Failed to fetch history:', err);
     }
   }
 
   async step() {
     try {
       const res = await fetch('/api/step', { method: 'POST' });
-      const data = await res.json();
-      if (data.success && data.record) {
-        this.state.history.push(data.record);
+      if (res.ok) {
+        const data = await res.json();
         this.state.latestMetrics = data.record;
-        this.state.step = data.total_steps;
+        this.state.history.push(data.record);
+        this.state.step = data.record.step;
         this.state.hour = data.record.hour_of_day;
 
-        // Process any new events
-        if (data.recent_events) {
+        if (data.recent_events && data.recent_events.length > 0) {
           data.recent_events.forEach((evt) => this.pushEventLog(evt));
         }
 
-        await this.fetchLayout();
         await this.fetchStatus();
         this.renderTelemetryChart();
       }
     } catch (err) {
-      console.error('Step error:', err);
+      console.error('Simulation step failed:', err);
+    }
+  }
+
+  async setPolicy(policyName, active) {
+    try {
+      const res = await fetch('/api/policy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ policy: policyName, active: active }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        this.state.activePolicies = data.active_policies || this.state.activePolicies;
+        this.pushEventLog({
+          timestamp: this.state.step,
+          type: 'POLICY',
+          message: `Manual policy override: ${policyName} -> ${active ? 'ENABLED' : 'DISABLED'}`,
+        });
+        await this.fetchStatus();
+      }
+    } catch (err) {
+      console.error('Failed to toggle policy:', err);
+    }
+  }
+
+  async resetSimulation(zones = 3) {
+    if (this.state.isPlaying) {
+      this.togglePlay();
+    }
+    try {
+      const res = await fetch('/api/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ zones: zones, seed: 42 }),
+      });
+      if (res.ok) {
+        this.state.history = [];
+        this.dom.eventsStream.innerHTML = '';
+        this.pushEventLog({
+          timestamp: 0,
+          type: 'SYSTEM',
+          message: `3D Digital Twin reset to Step 00 with ${zones} districts.`,
+        });
+        await this.fetchLayout();
+        await this.fetchStatus();
+        await this.fetchHistory();
+      }
+    } catch (err) {
+      console.error('Failed to reset simulation:', err);
     }
   }
 
   togglePlay() {
     this.state.isPlaying = !this.state.isPlaying;
     if (this.state.isPlaying) {
-      this.dom.btnPlay.classList.add('btn-danger');
-      this.dom.btnPlay.classList.remove('btn-primary');
+      this.dom.btnPlay.classList.add('playing');
       this.dom.btnPlayText.textContent = 'Pause';
+      this.dom.btnPlay.querySelector('.btn-icon').textContent = '⏸';
       this.startPlayLoop();
     } else {
-      this.dom.btnPlay.classList.remove('btn-danger');
-      this.dom.btnPlay.classList.add('btn-primary');
+      this.dom.btnPlay.classList.remove('playing');
       this.dom.btnPlayText.textContent = 'Run Auto';
+      this.dom.btnPlay.querySelector('.btn-icon').textContent = '▶';
       this.stopPlayLoop();
     }
   }
 
   startPlayLoop() {
-    this.timerId = setInterval(async () => {
-      if (!this.state.isPlaying) return;
-      await this.step();
+    this.timerId = setInterval(() => {
+      this.step();
     }, this.state.speedMs);
   }
 
@@ -279,168 +428,121 @@ class SmartCityApp {
 
   restartPlayLoop() {
     this.stopPlayLoop();
-    if (this.state.isPlaying) {
-      this.startPlayLoop();
-    }
-  }
-
-  async resetSimulation(zones = null) {
-    this.stopPlayLoop();
-    this.state.isPlaying = false;
-    this.dom.btnPlay.classList.remove('btn-danger');
-    this.dom.btnPlay.classList.add('btn-primary');
-    this.dom.btnPlayText.textContent = 'Run Auto';
-
-    const count = zones || this.state.zonesCount;
-    this.state.zonesCount = count;
-
-    try {
-      await fetch('/api/reset', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ zones: count }),
-      });
-      this.state.history = [];
-      this.pushEventLog({
-        type: 'SYSTEM',
-        timestamp: 0,
-        message: `City simulation reset with ${count} municipal zones.`,
-      });
-
-      await this.fetchLayout();
-      await this.fetchStatus();
-      this.renderTelemetryChart();
-    } catch (err) {
-      console.error('Reset error:', err);
-    }
-  }
-
-  async setPolicy(policyName, active) {
-    try {
-      const res = await fetch('/api/policy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ policy: policyName, active: active }),
-      });
-      const data = await res.json();
-      if (data.active_policies) {
-        this.state.activePolicies = data.active_policies;
-        this.pushEventLog({
-          type: 'POLICY_MANUAL',
-          timestamp: this.state.step,
-          message: `Manual override: ${policyName} set to ${active ? 'ACTIVE' : 'OFF'}.`,
-        });
-        await this.fetchStatus();
-      }
-    } catch (err) {
-      console.error('Policy toggle error:', err);
-    }
+    this.startPlayLoop();
   }
 
   // -------------------------------------------------------------------------
-  // HUD & UI Updates
+  // HUD Telemetry Updates
   // -------------------------------------------------------------------------
 
   updateHUD(statusData) {
     const m = statusData.latest_metrics || {};
     const step = statusData.step || 0;
-    const hour = statusData.hour_of_day || 0;
+    const hour = statusData.hour_of_day !== undefined ? statusData.hour_of_day : 12;
     const day = Math.floor(step / 24) + 1;
 
-    // Top Clock
-    this.dom.simClock.innerHTML = `Step ${String(step).padStart(2, '0')} <small>(${String(hour).padStart(2, '0')}:00 - Day ${day})</small>`;
+    // Top Clock Pill
+    this.dom.simClock.innerHTML = `Step ${String(step).padStart(2, '0')} <small>(${String(hour).padStart(2, '0')}:00 Day ${day})</small>`;
 
-    // Policy Pill Badge
+    // Policy Pill
     const oddEvenActive = this.state.activePolicies.odd_even_rule;
     if (oddEvenActive) {
-      this.dom.policyBadge.className = 'status-pill pill-alert';
-      this.dom.policyText.textContent = 'Odd-Even Rule: ACTIVE';
+      this.dom.policyBadge.className = 'telemetry-pill pill-alert';
+      this.dom.policyText.textContent = 'ODD-EVEN ACTIVE';
       this.dom.toggleOddEven.checked = true;
     } else {
-      this.dom.policyBadge.className = 'status-pill pill-normal';
-      this.dom.policyText.textContent = 'Traffic: Standard';
+      this.dom.policyBadge.className = 'telemetry-pill pill-normal';
+      this.dom.policyText.textContent = 'TRAFFIC: NORMAL';
       this.dom.toggleOddEven.checked = false;
     }
 
-    // Grid Status Pill
-    const blackout = m.blackout;
-    if (blackout) {
-      this.dom.gridBadge.className = 'status-pill pill-alert';
-      this.dom.gridText.textContent = 'Grid: BLACKOUT!';
+    // Grid Pill
+    if (m.blackout) {
+      this.dom.gridBadge.className = 'telemetry-pill pill-alert';
+      this.dom.gridText.textContent = 'GRID: BLACKOUT!';
     } else {
-      this.dom.gridBadge.className = 'status-pill pill-normal';
-      this.dom.gridText.textContent = 'Grid: Balanced';
+      this.dom.gridBadge.className = 'telemetry-pill pill-normal';
+      this.dom.gridText.textContent = 'GRID: BALANCED';
     }
 
-    // Curtail switch
-    this.dom.toggleCurtail.checked = !!this.state.activePolicies.curtail_nonrenewable;
+    // Water Top Pill
+    const resLevel = m.reservoir_level_pct !== undefined ? m.reservoir_level_pct : 85.0;
+    this.dom.waterTextTop.textContent = `RESERVES: ${resLevel.toFixed(0)}%`;
+    this.dom.waterBadgeTop.className = resLevel < 25 ? 'telemetry-pill pill-alert' : 'telemetry-pill pill-cyan';
 
-    // Card 1: Traffic
+    // EMS Top Pill
+    const greenWave = this.state.activePolicies.emergency_green_wave;
+    if (greenWave || (m.critical_incidents && m.critical_incidents > 0)) {
+      this.dom.emsBadgeTop.className = 'telemetry-pill pill-alert';
+      this.dom.emsTextTop.textContent = 'EMS: GREEN WAVE ACTIVE';
+    } else {
+      this.dom.emsBadgeTop.className = 'telemetry-pill pill-rose';
+      this.dom.emsTextTop.textContent = 'EMS: STANDBY';
+    }
+
+    // Policy Switch Checkboxes
+    this.dom.toggleCurtail.checked = !!this.state.activePolicies.curtail_nonrenewable;
+    this.dom.toggleWaterRationing.checked = !!this.state.activePolicies.water_rationing_rule;
+    this.dom.toggleGreenWave.checked = !!this.state.activePolicies.emergency_green_wave;
+
+    // Subsystem 1: Traffic Dock
     const congestion = m.traffic_congestion || 0;
     const congestionPct = (congestion * 100).toFixed(1);
-    this.dom.metricCongestion.textContent = `${congestionPct}%`;
-    this.dom.congestionBar.style.width = `${Math.min(100, congestion * 100)}%`;
-    this.dom.trafficBadge.textContent = `${congestionPct}%`;
+    this.dom.valCongestionPct.textContent = `${congestionPct}%`;
+    this.dom.barCongestion.style.width = `${Math.min(100, congestion * 100)}%`;
     this.dom.valVehicles.textContent = m.total_vehicles || 0;
     this.dom.valRerouted.textContent = m.rerouted_vehicles || 0;
 
-    // Card 2: Energy
+    // Subsystem 2: Energy Dock
     const demand = m.energy_usage || 0;
-    const supply = m.energy_supply || 0;
     const renew = m.renewable_mw || 0;
     const cleanPct = demand > 0 ? Math.min(100, Math.round((renew / demand) * 100)) : 0;
-    this.dom.metricDemand.innerHTML = `${demand.toFixed(1)} <small>MW</small>`;
-    this.dom.energyBar.style.width = `${cleanPct}%`;
-    this.dom.energyCleanBadge.textContent = `${cleanPct}% Clean`;
-    this.dom.valSupply.textContent = `${supply.toFixed(1)} MW`;
+    this.dom.valCleanPct.textContent = `${cleanPct}% Clean`;
+    this.dom.barEnergy.style.width = `${cleanPct}%`;
+    this.dom.valDemand.textContent = `${demand.toFixed(1)} MW`;
     this.dom.valEmissions.textContent = `${Math.round(m.emissions_kg || 0)} kg`;
-    this.dom.statRenewShare.textContent = `${cleanPct}%`;
 
-    // Card 3: AQI
-    const aqi = m.aqi || 30.0;
-    const aqiFormatted = aqi.toFixed(1);
-    this.dom.metricAqi.textContent = aqiFormatted;
-    this.dom.aqiBar.style.width = `${Math.min(100, (aqi / 160) * 100)}%`;
-    this.dom.valAqiTraffic.textContent = (m.traffic_congestion * 60 || 0).toFixed(1);
-    this.dom.valAqiEnergy.textContent = (m.non_renewable_mw * 12 || 0).toFixed(1);
-
+    // Subsystem 3: AQI Dock
+    const aqi = m.aqi || 35.0;
+    this.dom.valAqiNum.textContent = aqi.toFixed(1);
+    this.dom.barAqi.style.width = `${Math.min(100, (aqi / 160) * 100)}%`;
     if (aqi < 80) {
-      this.dom.aqiBadge.className = 'status-pill pill-good';
-      this.dom.aqiBadge.innerHTML = `<span class="pill-dot"></span><span>AQI ${aqiFormatted} • GOOD</span>`;
-      this.dom.aqiCatBadge.className = 'kpi-badge badge-emerald';
-      this.dom.aqiCatBadge.textContent = 'GOOD';
-      this.dom.statEmergency.textContent = 'Normal';
-      this.dom.statEmergency.className = 'text-green';
+      this.dom.aqiBadge.className = 'telemetry-pill pill-good';
+      this.dom.aqiText.textContent = `AQI ${aqi.toFixed(1)} • GOOD`;
+      this.dom.valAqiStatus.textContent = 'GOOD';
+      this.dom.valAqiStatus.className = 'text-green';
     } else if (aqi < 110) {
-      this.dom.aqiBadge.className = 'status-pill pill-normal';
-      this.dom.aqiBadge.innerHTML = `<span class="pill-dot"></span><span>AQI ${aqiFormatted} • MODERATE</span>`;
-      this.dom.aqiCatBadge.className = 'kpi-badge badge-blue';
-      this.dom.aqiCatBadge.textContent = 'MODERATE';
-      this.dom.statEmergency.textContent = 'Elevated';
-      this.dom.statEmergency.className = 'text-accent';
+      this.dom.aqiBadge.className = 'telemetry-pill pill-normal';
+      this.dom.aqiText.textContent = `AQI ${aqi.toFixed(1)} • MODERATE`;
+      this.dom.valAqiStatus.textContent = 'MODERATE';
+      this.dom.valAqiStatus.className = 'text-accent';
     } else {
-      this.dom.aqiBadge.className = 'status-pill pill-alert';
-      this.dom.aqiBadge.innerHTML = `<span class="pill-dot"></span><span>AQI ${aqiFormatted} • UNHEALTHY</span>`;
-      this.dom.aqiCatBadge.className = 'kpi-badge badge-alert';
-      this.dom.aqiCatBadge.textContent = 'UNHEALTHY';
-      this.dom.statEmergency.textContent = 'EMERGENCY ACTIVE';
-      this.dom.statEmergency.className = 'text-muted' + ' font-bold';
+      this.dom.aqiBadge.className = 'telemetry-pill pill-alert';
+      this.dom.aqiText.textContent = `AQI ${aqi.toFixed(1)} • UNHEALTHY`;
+      this.dom.valAqiStatus.textContent = 'UNHEALTHY';
+      this.dom.valAqiStatus.className = 'text-rose';
     }
 
-    // Card 4: Waste
-    const wasteGen = m.total_waste_kg || 0;
-    const wasteCol = m.collected_waste_kg || 0;
+    // Subsystem 4: Water Dock
+    this.dom.valWaterResPct.textContent = `${resLevel.toFixed(1)}%`;
+    this.dom.barWater.style.width = `${Math.min(100, resLevel)}%`;
+    this.dom.valWaterDemand.textContent = `${Math.round(m.water_consumption_kl || 0)} kL`;
+    this.dom.valDrainageLoad.textContent = `${(m.avg_drainage_load_pct || 25).toFixed(0)}%`;
+
+    // Subsystem 5: EMS Dock
+    const respTime = m.avg_response_time_min || 7.5;
+    this.dom.valEmsTime.textContent = `${respTime.toFixed(1)} min`;
+    this.dom.barEms.style.width = `${Math.min(100, (respTime / 20) * 100)}%`;
+    this.dom.valIncidents.textContent = m.emergency_incidents || 0;
+    this.dom.valHospitalBeds.textContent = `${(m.avg_hospital_occupancy || 60).toFixed(0)}%`;
+
+    // Subsystem 6: Waste Dock
     const overflows = m.overflow_bins || 0;
-    this.dom.metricWaste.innerHTML = `${Math.round(wasteGen)} <small>kg</small>`;
-    this.dom.valWasteCollected.textContent = `${Math.round(wasteCol)} kg`;
+    this.dom.valWasteStatus.textContent = overflows > 0 ? `${overflows} Overflows` : 'Normal';
+    this.dom.valWasteStatus.className = overflows > 0 ? 'text-rose' : 'text-purple';
+    this.dom.barWaste.style.width = `${Math.min(100, 20 + overflows * 20)}%`;
+    this.dom.valWasteGen.textContent = `${Math.round(m.total_waste_kg || 0)} kg`;
     this.dom.valOverflow.textContent = overflows;
-    if (overflows > 0) {
-      this.dom.wasteBadge.className = 'kpi-badge badge-alert';
-      this.dom.wasteBadge.textContent = `${overflows} Overflows`;
-    } else {
-      this.dom.wasteBadge.className = 'kpi-badge badge-purple';
-      this.dom.wasteBadge.textContent = 'Normal';
-    }
   }
 
   pushEventLog(event) {
@@ -455,335 +557,41 @@ class SmartCityApp {
     } else if (event.type === 'BlackoutEvent' || event.deficit_mw) {
       badgeClass = 'event-blackout';
       typeName = 'BLACKOUT';
-    } else if (event.type === 'PolicyChangeEvent' || event.type === 'POLICY_MANUAL') {
+    } else if (event.type === 'WaterDeficitEvent') {
+      badgeClass = 'event-alert';
+      typeName = 'WATER';
+    } else if (event.type === 'DrainageOverflowEvent') {
+      badgeClass = 'event-alert';
+      typeName = 'FLOOD';
+    } else if (event.type === 'EmergencyCorridorEvent') {
+      badgeClass = 'event-alert';
+      typeName = 'EMS';
+    } else if (event.type === 'PolicyChangeEvent' || event.type === 'POLICY') {
       badgeClass = 'event-policy';
-      typeName = 'POLICY';
+      typeName = 'AUTONOMOUS';
     }
 
     entry.className = `event-entry ${badgeClass}`;
     entry.innerHTML = `
       <span class="event-time">${timeStr}</span>
       <span class="event-badge">${typeName}</span>
-      <span class="event-msg">${event.message || 'System state update'}</span>
+      <span class="event-msg">${event.message || 'Subsystem state changed'}</span>
     `;
 
     this.dom.eventsStream.insertBefore(entry, this.dom.eventsStream.firstChild);
 
-    // Trim excess entries
     if (this.dom.eventsStream.children.length > 50) {
       this.dom.eventsStream.removeChild(this.dom.eventsStream.lastChild);
     }
   }
 
-  // -------------------------------------------------------------------------
-  // Canvas City Map Visualizer (60fps Animation Loop)
-  // -------------------------------------------------------------------------
-
-  startCanvasAnimation() {
-    const render = () => {
-      this.particleTime += 0.02;
-      this.renderCityMap();
-      this.animationFrameId = requestAnimationFrame(render);
-    };
-    render();
-  }
-
-  renderCityMap() {
-    const ctx = this.cityCtx;
-    const canvas = this.dom.cityCanvas;
-    const rect = canvas.getBoundingClientRect();
-    const w = rect.width;
-    const h = rect.height;
-
-    ctx.clearRect(0, 0, w, h);
-
-    // Draw Subtle Tech Grid Background
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
-    ctx.lineWidth = 1;
-    const gridSize = 40;
-    for (let x = 0; x < w; x += gridSize) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, h);
-      ctx.stroke();
-    }
-    for (let y = 0; y < h; y += gridSize) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(w, y);
-      ctx.stroke();
-    }
-
-    if (!this.state.layout || !this.state.layout.zones) return;
-
-    const zones = this.state.layout.zones;
-    const numZones = zones.length;
-
-    // Calculate zone positions in a pleasant circular or multi-column layout
-    const zonePositions = [];
-    const centerX = w / 2;
-    const centerY = h / 2;
-    const radius = Math.min(w, h) * 0.35;
-
-    for (let i = 0; i < numZones; i++) {
-      const angle = (i / numZones) * Math.PI * 2 - Math.PI / 2;
-      const zx = centerX + Math.cos(angle) * radius;
-      const zy = centerY + Math.sin(angle) * radius;
-      zonePositions.push({ x: zx, y: zy, zone: zones[i] });
-    }
-
-    // 1. Draw Roads between Zones
-    this.renderRoads(ctx, zonePositions);
-
-    // 2. Draw Zones (Districts)
-    this.renderZones(ctx, zonePositions);
-
-    // 3. Draw Municipal Infrastructure (Power plants, Solar, Wind)
-    if (this.state.layers.power) {
-      this.renderInfrastructure(ctx, zonePositions);
-    }
-
-    // 4. Draw Animated Vehicles
-    if (this.state.layers.vehicles) {
-      this.renderVehicles(ctx, zonePositions);
-    }
-
-    // 5. Draw Signals
-    if (this.state.layers.signals) {
-      this.renderSignals(ctx, zonePositions);
-    }
-
-    // 6. Draw Refuse Collection Trucks
-    this.renderGarbageTrucks(ctx, zonePositions);
-
-    // 7. Draw Atmospheric Pollution Haze Overlay
-    if (this.state.layers.haze) {
-      this.renderPollutionHaze(ctx, w, h);
-    }
-  }
-
-  renderRoads(ctx, positions) {
-    const num = positions.length;
-    if (num < 2) return;
-
-    const congestion = this.state.latestMetrics.traffic_congestion || 0.2;
-
-    // Ring road connecting adjacent zones
-    ctx.lineWidth = 6;
-    ctx.strokeStyle = '#1e293b';
-    ctx.beginPath();
-    for (let i = 0; i < num; i++) {
-      const p1 = positions[i];
-      const p2 = positions[(i + 1) % num];
-      ctx.moveTo(p1.x, p1.y);
-      ctx.lineTo(p2.x, p2.y);
-    }
-    ctx.stroke();
-
-    // Arterial roads radiating from center to each zone
-    ctx.lineWidth = 10;
-    ctx.strokeStyle = '#0f172a';
-    ctx.beginPath();
-    for (let i = 0; i < num; i++) {
-      const p = positions[i];
-      ctx.moveTo(ctx.canvas.width / 4, ctx.canvas.height / 4); // virtual center
-      ctx.lineTo(p.x, p.y);
-    }
-    ctx.stroke();
-
-    // Road glowing active neon lane
-    ctx.lineWidth = 2.5;
-    ctx.strokeStyle = congestion > 0.7 ? '#f43f5e' : '#38bdf8';
-    ctx.shadowColor = congestion > 0.7 ? '#f43f5e' : '#38bdf8';
-    ctx.shadowBlur = 8;
-    ctx.beginPath();
-    for (let i = 0; i < num; i++) {
-      const p1 = positions[i];
-      const p2 = positions[(i + 1) % num];
-      ctx.moveTo(p1.x, p1.y);
-      ctx.lineTo(p2.x, p2.y);
-    }
-    ctx.stroke();
-    ctx.shadowBlur = 0; // Reset
-  }
-
-  renderZones(ctx, positions) {
-    positions.forEach((pos, idx) => {
-      const z = pos.zone;
-
-      // Glow area
-      const grad = ctx.createRadialGradient(pos.x, pos.y, 10, pos.x, pos.y, 65);
-      grad.addColorStop(0, 'rgba(56, 189, 248, 0.12)');
-      grad.addColorStop(1, 'rgba(56, 189, 248, 0.0)');
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.arc(pos.x, pos.y, 65, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Core Zone Hub Circle
-      ctx.fillStyle = '#0f172a';
-      ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(pos.x, pos.y, 32, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-
-      // District Icon
-      ctx.font = '16px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('🏢', pos.x, pos.y - 2);
-
-      // District Label
-      ctx.font = '600 11px Outfit, sans-serif';
-      ctx.fillStyle = '#f8fafc';
-      ctx.fillText(z.name, pos.x, pos.y + 45);
-
-      ctx.font = '400 9px JetBrains Mono, monospace';
-      ctx.fillStyle = '#94a3b8';
-      ctx.fillText(`Pop: ${z.population}`, pos.x, pos.y + 58);
-    });
-  }
-
-  renderInfrastructure(ctx, positions) {
-    positions.forEach((pos, idx) => {
-      // Solar Farm Icon offset
-      const sx = pos.x + 44;
-      const sy = pos.y - 35;
-      ctx.font = '14px sans-serif';
-      ctx.fillText('☀️', sx, sy);
-
-      // Wind Farm offset with rotation
-      const wx = pos.x - 44;
-      const wy = pos.y - 35;
-      ctx.save();
-      ctx.translate(wx, wy);
-      ctx.rotate(this.particleTime * 2);
-      ctx.fillText('💨', 0, 0);
-      ctx.restore();
-
-      // Gas Plant offset
-      const gx = pos.x;
-      const gy = pos.y - 48;
-      ctx.fillText('🏭', gx, gy);
-    });
-  }
-
-  renderVehicles(ctx, positions) {
-    const num = positions.length;
-    if (num < 2) return;
-
-    const vehiclesCount = Math.min(24, Math.max(8, Math.floor((this.state.latestMetrics.total_vehicles || 500) / 70)));
-    const oddEvenActive = this.state.activePolicies.odd_even_rule;
-
-    for (let v = 0; v < vehiclesCount; v++) {
-      const fromIdx = v % num;
-      const toIdx = (fromIdx + 1) % num;
-      const p1 = positions[fromIdx];
-      const p2 = positions[toIdx];
-
-      // Calculate position along edge
-      const speedFactor = 0.3;
-      const progress = (this.particleTime * speedFactor + (v / vehiclesCount)) % 1.0;
-      const vx = p1.x + (p2.x - p1.x) * progress;
-      const vy = p1.y + (p2.y - p1.y) * progress;
-
-      // Draw Vehicle Node
-      const isOddPlate = (v % 2 !== 0);
-      const isRestricted = oddEvenActive && isOddPlate;
-
-      if (isRestricted) {
-        // Vehicle pulled over / barred
-        ctx.fillStyle = 'rgba(244, 63, 94, 0.4)';
-        ctx.beginPath();
-        ctx.arc(vx + 6, vy + 6, 2.5, 0, Math.PI * 2);
-        ctx.fill();
-      } else {
-        ctx.fillStyle = '#38bdf8';
-        ctx.shadowColor = '#38bdf8';
-        ctx.shadowBlur = 6;
-        ctx.beginPath();
-        ctx.arc(vx, vy, 3.5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.shadowBlur = 0;
-      }
-    }
-  }
-
-  renderSignals(ctx, positions) {
-    const intersections = (this.state.layout && this.state.layout.intersections) || [];
-    positions.forEach((pos, idx) => {
-      const inter = intersections[idx] || { state: 'GREEN' };
-      const color = inter.state === 'GREEN' ? '#10b981' : inter.state === 'YELLOW' ? '#f59e0b' : '#f43f5e';
-
-      // Draw signal indicator dot
-      ctx.fillStyle = color;
-      ctx.shadowColor = color;
-      ctx.shadowBlur = 10;
-      ctx.beginPath();
-      ctx.arc(pos.x + 24, pos.y + 24, 5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.shadowBlur = 0;
-    });
-  }
-
-  renderGarbageTrucks(ctx, positions) {
-    const num = positions.length;
-    if (num < 2) return;
-
-    // Garbage truck circulating routes
-    const progress = (this.particleTime * 0.15) % 1.0;
-    const currentEdge = Math.floor(this.particleTime * 0.15 * num) % num;
-    const nextEdge = (currentEdge + 1) % num;
-
-    const p1 = positions[currentEdge];
-    const p2 = positions[nextEdge];
-    const localProg = (this.particleTime * 0.15 * num) % 1.0;
-
-    const tx = p1.x + (p2.x - p1.x) * localProg;
-    const ty = p1.y + (p2.y - p1.y) * localProg;
-
-    ctx.font = '15px sans-serif';
-    ctx.fillText('🚛', tx, ty);
-  }
-
-  renderPollutionHaze(ctx, w, h) {
-    const aqi = this.state.latestMetrics.aqi || 30.0;
-    if (aqi <= 50) return; // Clean air
-
-    const opacity = Math.min(0.45, Math.max(0.05, (aqi - 50) / 140));
-    const isUnhealthy = aqi >= 110;
-
-    // Haze tint: amber to red-orange
-    const hazeColor = isUnhealthy ? `rgba(239, 68, 68, ${opacity})` : `rgba(245, 158, 11, ${opacity * 0.7})`;
-
-    ctx.fillStyle = hazeColor;
-    ctx.fillRect(0, 0, w, h);
-
-    // If unhealthy, draw floating particulate motes
-    if (isUnhealthy) {
-      ctx.fillStyle = 'rgba(254, 202, 202, 0.4)';
-      for (let i = 0; i < 20; i++) {
-        const px = ((i * 67 + this.particleTime * 15) % w);
-        const py = ((i * 43 + this.particleTime * 10) % h);
-        ctx.beginPath();
-        ctx.arc(px, py, 1.2, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-  }
-
-  // -------------------------------------------------------------------------
-  // Telemetry Chart Rendering (Canvas Multi-Series)
-  // -------------------------------------------------------------------------
-
   renderTelemetryChart() {
+    if (!this.chartCtx || !this.dom.telemetryCanvas) return;
+
     const ctx = this.chartCtx;
     const canvas = this.dom.telemetryCanvas;
-    const rect = canvas.getBoundingClientRect();
-    const w = rect.width;
-    const h = rect.height;
+    const w = canvas.width;
+    const h = canvas.height;
 
     ctx.clearRect(0, 0, w, h);
 
@@ -792,11 +600,11 @@ class SmartCityApp {
       ctx.fillStyle = '#64748b';
       ctx.font = '12px Outfit, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('Advancing simulation will generate live multi-subsystem telemetry curves...', w / 2, h / 2);
+      ctx.fillText('Advancing simulation generates live multi-subsystem telemetry curves...', w / 2, h / 2);
       return;
     }
 
-    const padLeft = 45;
+    const padLeft = 50;
     const padRight = 20;
     const padTop = 20;
     const padBottom = 30;
@@ -806,8 +614,8 @@ class SmartCityApp {
     const maxSteps = Math.max(history.length - 1, 24);
     const getX = (idx) => padLeft + (idx / maxSteps) * plotW;
 
-    // Draw Grid Lines
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+    // Grid lines
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
     ctx.lineWidth = 1;
     for (let s = 0; s <= 4; s++) {
       const y = padTop + (s / 4) * plotH;
@@ -817,7 +625,7 @@ class SmartCityApp {
       ctx.stroke();
     }
 
-    // Highlight Odd-Even Restriction Active spans
+    // Highlight Odd-Even Policy Active spans
     for (let i = 0; i < history.length; i++) {
       if (history[i].odd_even_active) {
         const xStart = getX(Math.max(0, i - 0.5));
@@ -829,21 +637,21 @@ class SmartCityApp {
 
     const tab = this.state.activeChartTab;
 
-    // Series 1: Traffic Congestion (0.0 - 1.0) -> scaled to 0-100%
+    // Series 1: Traffic Congestion (Blue)
     if (tab === 'all' || tab === 'traffic') {
       ctx.strokeStyle = '#38bdf8';
       ctx.lineWidth = 2.2;
       ctx.beginPath();
       history.forEach((rec, idx) => {
         const x = getX(idx);
-        const y = padTop + (1 - Math.min(1.0, rec.traffic_congestion)) * plotH;
+        const y = padTop + (1 - Math.min(1.0, rec.traffic_congestion || 0)) * plotH;
         if (idx === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
       });
       ctx.stroke();
     }
 
-    // Series 2: Energy Demand (MW)
+    // Series 2: Energy Demand (Green)
     if (tab === 'all' || tab === 'energy') {
       const maxEnergy = Math.max(...history.map((r) => r.energy_usage || 5), 10);
       ctx.strokeStyle = '#10b981';
@@ -859,7 +667,7 @@ class SmartCityApp {
       ctx.stroke();
     }
 
-    // Series 3: Air Quality Index (0 - 160)
+    // Series 3: Air Quality Index (Amber)
     if (tab === 'all' || tab === 'aqi') {
       const maxAqi = 160;
       ctx.strokeStyle = '#f59e0b';
@@ -882,7 +690,37 @@ class SmartCityApp {
       ctx.moveTo(padLeft, alertY);
       ctx.lineTo(w - padRight, alertY);
       ctx.stroke();
-      ctx.setLineDash([]); // Reset
+      ctx.setLineDash([]);
+    }
+
+    // Series 4: Water Reservoir % (Cyan)
+    if (tab === 'all' || tab === 'water') {
+      ctx.strokeStyle = '#22d3ee';
+      ctx.lineWidth = 2.0;
+      ctx.beginPath();
+      history.forEach((rec, idx) => {
+        const x = getX(idx);
+        const val = (rec.reservoir_level_pct !== undefined ? rec.reservoir_level_pct : 85) / 100;
+        const y = padTop + (1 - Math.min(1.0, val)) * plotH;
+        if (idx === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    }
+
+    // Series 5: EMS Response Time (Rose)
+    if (tab === 'all' || tab === 'emergency') {
+      ctx.strokeStyle = '#fb7185';
+      ctx.lineWidth = 2.0;
+      ctx.beginPath();
+      history.forEach((rec, idx) => {
+        const x = getX(idx);
+        const val = (rec.avg_response_time_min || 7.5) / 20.0;
+        const y = padTop + (1 - Math.min(1.0, val)) * plotH;
+        if (idx === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
     }
 
     // Axis Labels
@@ -900,7 +738,7 @@ class SmartCityApp {
   }
 }
 
-// Instantiate on load
+// Instantiate on DOM load
 window.addEventListener('DOMContentLoaded', () => {
   window.app = new SmartCityApp();
 });

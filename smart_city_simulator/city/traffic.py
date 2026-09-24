@@ -236,10 +236,12 @@ class TrafficManagementSystem(BaseSubsystem):
         zones: List[Zone],
         strategy: Optional[TrafficRoutingStrategy] = None,
         odd_even_active: bool = False,
+        green_wave_active: bool = False,
     ) -> None:
         self.zones = zones
         self.strategy = strategy or DynamicCongestionReroutingStrategy()
         self.odd_even_active = odd_even_active
+        self.green_wave_active = green_wave_active
         self._event_bus = EventBus()
         self.roads: Dict[str, Road] = {}
         self.intersections: Dict[str, Intersection] = {}
@@ -287,6 +289,14 @@ class TrafficManagementSystem(BaseSubsystem):
         """Enable or disable the municipal odd-even vehicle rule."""
         self.odd_even_active = active
 
+    def set_green_wave(self, active: bool) -> None:
+        """Enable or disable emergency green-wave traffic corridor prioritization."""
+        self.green_wave_active = active
+        if active:
+            for intersection in self.intersections.values():
+                intersection.state = TrafficLightState.GREEN
+                intersection.timer = 0
+
     def set_strategy(self, strategy: TrafficRoutingStrategy) -> None:
         """Switch the traffic routing strategy at runtime (Strategy Pattern)."""
         self.strategy = strategy
@@ -299,6 +309,7 @@ class TrafficManagementSystem(BaseSubsystem):
             inter.state = TrafficLightState.GREEN
             inter.timer = 0
         self.odd_even_active = False
+        self.green_wave_active = False
 
     def get_status(self) -> Dict[str, Any]:
         """Return status summary."""
@@ -308,6 +319,7 @@ class TrafficManagementSystem(BaseSubsystem):
         )
         return {
             "odd_even_active": self.odd_even_active,
+            "green_wave_active": self.green_wave_active,
             "average_congestion": round(avg_congestion, 3),
             "total_roads": len(self.roads),
             "total_intersections": len(self.intersections),
@@ -315,9 +327,10 @@ class TrafficManagementSystem(BaseSubsystem):
 
     def update(self, step: int) -> Dict[str, Any]:
         """Advance the traffic simulation by one step."""
-        # 1. Advance traffic lights
-        for intersection in self.intersections.values():
-            intersection.tick()
+        # 1. Advance traffic lights (unless green wave is locking them green)
+        if not self.green_wave_active:
+            for intersection in self.intersections.values():
+                intersection.tick()
 
         # 2. Reset road vehicle counts for the new time step
         for road in self.roads.values():
