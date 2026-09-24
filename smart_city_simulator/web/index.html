@@ -242,12 +242,35 @@
   </aside>
 
   <!-- =========================================================================
-       FLOATING AUTONOMOUS EVENT TICKER (Right Side)
+       RIGHT SIDE PANEL: 2D CITY MAP & AUTONOMOUS EVENT TICKER
        ========================================================================= -->
   <section class="events-feed-panel glass-hud">
+    <!-- 2D Simple City Map -->
+    <div class="minimap-section">
+      <div class="panel-section-title">
+        <div class="title-with-pulse">
+          <span class="live-dot"></span>
+          <span class="title-icon">🗺️</span>
+          <h2>2D City Map</h2>
+        </div>
+        <span class="badge-mini">LIVE 2D</span>
+      </div>
+      <div class="minimap-canvas-wrap">
+        <canvas id="city-2d-canvas" width="280" height="180"></canvas>
+      </div>
+      <div class="minimap-legend">
+        <span><i class="dot-legend dot-power"></i> Power</span>
+        <span><i class="dot-legend dot-water"></i> Water</span>
+        <span><i class="dot-legend dot-ems"></i> EMS</span>
+        <span><i class="dot-legend dot-car"></i> Cars</span>
+      </div>
+    </div>
+
+    <div class="panel-divider"></div>
+
     <div class="panel-section-title">
       <div class="title-with-pulse">
-        <span class="live-dot"></span>
+        <span class="live-dot dot-cyan"></span>
         <span class="title-icon">📡</span>
         <h2>Autonomous Event Feed</h2>
       </div>
@@ -257,7 +280,7 @@
       <div class="event-entry event-info">
         <span class="event-time">12:00</span>
         <span class="event-badge">SYSTEM</span>
-        <span class="event-msg">3D Digital Twin connected. 6 Subsystems operational.</span>
+        <span class="event-msg">3D & 2D Digital Twin connected. Subsystems operational.</span>
       </div>
     </div>
   </section>

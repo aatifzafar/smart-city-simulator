@@ -101,6 +101,9 @@ class SmartCityApp {
       valWasteGen: document.getElementById('val-waste-gen'),
       valOverflow: document.getElementById('val-overflow'),
 
+      // 2D City Map Canvas
+      city2dCanvas: document.getElementById('city-2d-canvas'),
+
       // Charts Modal
       btnToggleCharts: document.getElementById('btn-toggle-charts'),
       chartsModal: document.getElementById('charts-modal'),
@@ -110,6 +113,10 @@ class SmartCityApp {
 
     if (this.dom.telemetryCanvas) {
       this.chartCtx = this.dom.telemetryCanvas.getContext('2d');
+    }
+
+    if (this.dom.city2dCanvas) {
+      this.map2dCtx = this.dom.city2dCanvas.getContext('2d');
     }
 
     this.init();
@@ -127,7 +134,10 @@ class SmartCityApp {
     // 2. Setup Event Listeners
     this.setupEventListeners();
 
-    // 3. Initial Fetch
+    // 3. Start 2D Map Continuous Render Loop
+    this.start2DMapLoop();
+
+    // 4. Initial Fetch
     await this.fetchLayout();
     await this.fetchStatus();
     await this.fetchHistory();
@@ -755,6 +765,279 @@ class SmartCityApp {
     ctx.fillText('0h', padLeft, h - 10);
     ctx.fillText(`${Math.floor(maxSteps / 2)}h`, padLeft + plotW / 2, h - 10);
     ctx.fillText(`${maxSteps}h`, w - padRight, h - 10);
+  }
+
+  // -------------------------------------------------------------------------
+  // 2D City Blueprint Minimap Engine
+  // -------------------------------------------------------------------------
+
+  start2DMapLoop() {
+    if (!this.dom.city2dCanvas || !this.map2dCtx) return;
+
+    // Attach click interaction on 2D map to inspect objects / focus camera
+    this.dom.city2dCanvas.addEventListener('click', (e) => this.handle2DMapClick(e));
+
+    const loop = () => {
+      this.render2DMap();
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  }
+
+  render2DMap() {
+    const canvas = this.dom.city2dCanvas;
+    const ctx = this.map2dCtx;
+    if (!canvas || !ctx) return;
+
+    const w = canvas.width;
+    const h = canvas.height;
+    const time = Date.now() * 0.003;
+
+    // 1. Clear background
+    ctx.fillStyle = '#060b14';
+    ctx.fillRect(0, 0, w, h);
+
+    // 2. Blueprint Radar Grid
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.06)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x <= w; x += 20) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, h);
+      ctx.stroke();
+    }
+    for (let y = 0; y <= h; y += 20) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(w, y);
+      ctx.stroke();
+    }
+
+    // Coordinate conversion helper: 3D world [-240, 240] -> 2D Canvas [0, w] & [0, h]
+    const to2D = (wx, wz) => {
+      return {
+        x: w / 2 + (wx / 260) * (w * 0.44),
+        y: h / 2 + (wz / 260) * (h * 0.44),
+      };
+    };
+
+    // 3. District Zone Boundaries
+    const districts = [
+      { name: "D1 Res", x: -130, z: 100, color: "rgba(56, 189, 248, 0.07)" },
+      { name: "D2 Downtown", x: 0, z: 100, color: "rgba(2, 132, 199, 0.09)" },
+      { name: "D3 Ind", x: 130, z: 100, color: "rgba(100, 116, 139, 0.08)" },
+      { name: "D4 Parks", x: -60, z: -100, color: "rgba(16, 185, 129, 0.07)" },
+    ];
+
+    districts.forEach((d) => {
+      const p = to2D(d.x, d.z);
+      ctx.fillStyle = d.color;
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(p.x - 24, p.y - 18, 48, 36, 4);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = "rgba(148, 163, 184, 0.6)";
+      ctx.font = "8px JetBrains Mono, monospace";
+      ctx.textAlign = "center";
+      ctx.fillText(d.name, p.x, p.y + 3);
+    });
+
+    // 4. Perimeter Ring Road
+    ctx.strokeStyle = '#1e293b';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    const ringCenter = to2D(0, 0);
+    const ringRx = (230 / 260) * (w * 0.44);
+    const ringRy = (230 / 260) * (h * 0.44);
+    ctx.ellipse(ringCenter.x, ringCenter.y, ringRx, ringRy, 0, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // 5. Arterial Boulevard & Cross Avenues
+    const congestion = this.state.latestMetrics.traffic_congestion || 0.2;
+    let roadColor = '#10b981'; // Green
+    if (congestion > 0.7) roadColor = '#f43f5e'; // Red
+    else if (congestion > 0.4) roadColor = '#f59e0b'; // Amber
+
+    // Main Arterial Boulevard (East-West)
+    const pW = to2D(-240, 0);
+    const pE = to2D(240, 0);
+    ctx.strokeStyle = roadColor;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(pW.x, pW.y);
+    ctx.lineTo(pE.x, pE.y);
+    ctx.stroke();
+
+    // North-South Avenues
+    [-160, 0, 160].forEach((ax) => {
+      const pN = to2D(ax, 210);
+      const pS = to2D(ax, -210);
+      ctx.strokeStyle = '#334155';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(pN.x, pN.y);
+      ctx.lineTo(pS.x, pS.y);
+      ctx.stroke();
+    });
+
+    // 6. Power Grid Transmission Lines (Dashed Gold/Green)
+    const pSolar = to2D(-160, 180);
+    const pSub = to2D(0, 150);
+    const pGas = to2D(160, 180);
+    const pDowntown = to2D(0, 60);
+
+    ctx.strokeStyle = this.state.latestMetrics.blackout ? '#f43f5e' : 'rgba(245, 158, 11, 0.65)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(pSolar.x, pSolar.y);
+    ctx.lineTo(pSub.x, pSub.y);
+    ctx.lineTo(pGas.x, pGas.y);
+    ctx.moveTo(pSub.x, pSub.y);
+    ctx.lineTo(pDowntown.x, pDowntown.y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // 7. Water Aqueduct Lines (Dashed Cyan)
+    const pRes = to2D(130, -130);
+    const pPumpJunc = to2D(0, -60);
+    const pHosp = to2D(-120, -110);
+
+    ctx.strokeStyle = 'rgba(6, 182, 212, 0.65)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([2, 2]);
+    ctx.beginPath();
+    ctx.moveTo(pRes.x, pRes.y);
+    ctx.lineTo(pPumpJunc.x, pPumpJunc.y);
+    ctx.lineTo(pHosp.x, pHosp.y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // 8. Key Infrastructure Nodes & Icons
+    // Solar Park
+    ctx.fillStyle = '#10b981';
+    ctx.beginPath();
+    ctx.arc(pSolar.x, pSolar.y, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#6ee7b7';
+    ctx.font = '8px JetBrains Mono, monospace';
+    ctx.fillText('☀️ Solar', pSolar.x, pSolar.y - 6);
+
+    // Gas Peaker Plant
+    ctx.fillStyle = '#f59e0b';
+    ctx.beginPath();
+    ctx.arc(pGas.x, pGas.y, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#fde68a';
+    ctx.fillText('🏭 Gas', pGas.x, pGas.y - 6);
+
+    // Substation
+    ctx.fillStyle = this.state.latestMetrics.blackout ? '#f43f5e' : '#38bdf8';
+    ctx.beginPath();
+    ctx.rect(pSub.x - 3, pSub.y - 3, 6, 6);
+    ctx.fill();
+    ctx.fillStyle = '#bae6fd';
+    ctx.fillText('⚡ Grid', pSub.x, pSub.y - 6);
+
+    // Water Reservoir Basin
+    const resLevel = this.state.latestMetrics.reservoir_level_pct !== undefined ? this.state.latestMetrics.reservoir_level_pct : 85;
+    ctx.fillStyle = resLevel < 25 ? 'rgba(217, 119, 6, 0.5)' : 'rgba(2, 132, 199, 0.6)';
+    ctx.strokeStyle = '#0284c7';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.roundRect(pRes.x - 14, pRes.y - 12, 28, 24, 3);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#e0f2fe';
+    ctx.fillText(`💧 ${Math.round(resLevel)}%`, pRes.x, pRes.y + 3);
+
+    // General Hospital
+    ctx.fillStyle = '#f43f5e';
+    ctx.beginPath();
+    ctx.arc(pHosp.x, pHosp.y, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#fca5a5';
+    ctx.fillText('🏥 Hospital', pHosp.x, pHosp.y - 6);
+
+    // 9. Traffic Signal Junction Indicators
+    [-160, 0, 160].forEach((ix) => {
+      const pInt = to2D(ix, 0);
+      const isGreen = this.state.activePolicies.emergency_green_wave || Math.sin(time + ix) > 0;
+      ctx.fillStyle = isGreen ? '#10b981' : '#f43f5e';
+      ctx.beginPath();
+      ctx.arc(pInt.x, pInt.y, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // 10. Moving Commuter Vehicle Dots
+    if (this.city3d && this.city3d.vehicles) {
+      this.city3d.vehicles.forEach((car) => {
+        if (!car.mesh.visible) return;
+        const pCar = to2D(car.mesh.position.x, car.mesh.position.z);
+        ctx.fillStyle = car.isOddPlate ? '#38bdf8' : '#fbbf24';
+        ctx.beginPath();
+        ctx.arc(pCar.x, pCar.y, 1.8, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    // 11. Emergency Ambulance Radar Pulse Dot
+    if (this.city3d && this.city3d.ambulance && this.city3d.ambulance.active) {
+      const pAmb = to2D(this.city3d.ambulance.mesh.position.x, this.city3d.ambulance.mesh.position.z);
+      
+      // Radar ring pulse
+      const pulseRad = 3 + (Math.sin(time * 6) + 1) * 3;
+      ctx.strokeStyle = 'rgba(244, 63, 94, 0.7)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.arc(pAmb.x, pAmb.y, pulseRad, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Flashing ambulance dot
+      ctx.fillStyle = Math.sin(time * 10) > 0 ? '#f43f5e' : '#ffffff';
+      ctx.beginPath();
+      ctx.arc(pAmb.x, pAmb.y, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  handle2DMapClick(event) {
+    const canvas = this.dom.city2dCanvas;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const clickX = event.clientX - rect.left;
+    const clickY = event.clientY - rect.top;
+
+    const w = canvas.width;
+    const h = canvas.height;
+
+    // Convert 2D click back to world approx
+    const worldX = ((clickX - w / 2) / (w * 0.44)) * 260;
+    const worldZ = ((clickY - h / 2) / (h * 0.44)) * 260;
+
+    // Check proximity to key nodes and trigger inspection / 3D camera
+    if (Math.hypot(worldX - 130, worldZ - (-130)) < 40) {
+      if (this.city3d) this.city3d.setCameraPreset("WATER");
+      this.handleObjectSelected({ type: "WATER_RESERVOIR", name: "Central Aqueduct & Stormwater Reservoir", capacity: "15,000 kL" });
+    } else if (Math.hypot(worldX - (-160), worldZ - 180) < 40) {
+      if (this.city3d) this.city3d.setCameraPreset("POWER");
+      this.handleObjectSelected({ type: "SOLAR_FARM", name: "Helios Renewable Solar & Wind Park" });
+    } else if (Math.hypot(worldX - 160, worldZ - 180) < 40) {
+      if (this.city3d) this.city3d.setCameraPreset("POWER");
+      this.handleObjectSelected({ type: "GAS_POWER_PLANT", name: "Vulcan Natural Gas Peaker Plant" });
+    } else if (Math.hypot(worldX - 0, worldZ - 150) < 35) {
+      if (this.city3d) this.city3d.setCameraPreset("POWER");
+      this.handleObjectSelected({ type: "GRID_SUBSTATION", name: "Central Municipal Power Substation" });
+    } else if (Math.hypot(worldX - (-120), worldZ - (-110)) < 40) {
+      if (this.city3d) this.city3d.setCameraPreset("EMERGENCY");
+      this.handleObjectSelected({ type: "HOSPITAL", name: "Metro General Hospital & Trauma Center" });
+    } else {
+      if (this.city3d) this.city3d.setCameraPreset("TRAFFIC");
+    }
   }
 }
 
