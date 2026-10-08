@@ -313,8 +313,114 @@ body.digital-twin-app {
 }
 
 .title-icon {
-  font-size: 15px;
-  margin-right: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 6px;
+}
+
+/* Custom Vector SVG Icons */
+.svg-icon {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.title-icon.svg-icon {
+  width: 16px;
+  height: 16px;
+  stroke: var(--accent-coral);
+  margin-right: 6px;
+}
+
+.btn-icon.svg-icon {
+  width: 13px;
+  height: 13px;
+}
+
+.btn-primary .btn-icon.svg-icon {
+  fill: currentColor;
+  stroke: none;
+}
+
+.cam-icon.svg-icon {
+  width: 13px;
+  height: 13px;
+  stroke: currentColor;
+}
+
+.layer-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.layer-icon.svg-icon {
+  width: 13px;
+  height: 13px;
+}
+
+.layer-icon-traffic { stroke: #FF7A45; }
+.layer-icon-power { stroke: #F59E0B; }
+.layer-icon-water { stroke: #0284C7; }
+.layer-icon-ems { stroke: #E11D48; }
+.layer-icon-smog { stroke: #10B981; }
+.layer-icon-waste { stroke: #8B5CF6; }
+
+.kpi-icon-chip svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+.kpi-peach .kpi-icon-chip svg { stroke: #FF7A45; }
+.kpi-mint .kpi-icon-chip svg { stroke: #F59E0B; }
+.kpi-lavender .kpi-icon-chip svg { stroke: #10B981; }
+.kpi-cyan .kpi-icon-chip svg { stroke: #0284C7; }
+.kpi-pink .kpi-icon-chip svg { stroke: #E11D48; }
+.kpi-purple .kpi-icon-chip svg { stroke: #8B5CF6; }
+
+.inspect-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.inspect-icon svg {
+  width: 22px;
+  height: 22px;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+.charts-icon svg {
+  width: 16px;
+  height: 16px;
+  stroke: #FFFFFF;
+}
+
+.modal-title-icon svg {
+  width: 18px;
+  height: 18px;
+  stroke: var(--accent-coral);
+}
+
+.btn-close-hud svg {
+  width: 12px;
+  height: 12px;
+  stroke: currentColor;
 }
 
 .sub-label {

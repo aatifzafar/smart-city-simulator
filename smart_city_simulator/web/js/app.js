@@ -4,6 +4,20 @@
  * and synchronizes state with the Three.js 3D WebGL Digital Twin Engine.
  */
 
+const SVG_ICONS = {
+  PLAY: '<svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="6 4 20 12 6 20 6 4"/></svg>',
+  PAUSE: '<svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>',
+  HOSPITAL: '<svg class="svg-icon" viewBox="0 0 24 24" style="stroke: #E11D48;"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>',
+  SOLAR_FARM: '<svg class="svg-icon" viewBox="0 0 24 24" style="stroke: #F59E0B;"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>',
+  GAS_POWER_PLANT: '<svg class="svg-icon" viewBox="0 0 24 24" style="stroke: #FF7A45;"><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><line x1="14" y1="18" x2="14.01" y2="18"/><line x1="18" y1="18" x2="18.01" y2="18"/></svg>',
+  WATER_RESERVOIR: '<svg class="svg-icon" viewBox="0 0 24 24" style="stroke: #0284C7;"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>',
+  GRID_SUBSTATION: '<svg class="svg-icon" viewBox="0 0 24 24" style="stroke: #F59E0B;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+  GRID_PYLON: '<svg class="svg-icon" viewBox="0 0 24 24" style="stroke: #FF7A45;"><path d="M12 2v20"/><path d="M5 9h14"/><path d="M7 16h10"/><line x1="5" y1="9" x2="12" y2="2"/><line x1="19" y1="9" x2="12" y2="2"/><line x1="5" y1="9" x2="12" y2="22"/><line x1="19" y1="9" x2="12" y2="22"/></svg>',
+  DRAINAGE_PUMP: '<svg class="svg-icon" viewBox="0 0 24 24" style="stroke: #0284C7;"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 6.36 15.36L12 12"/><path d="M3 12a9 9 0 0 1 15.36-6.36L12 12"/><path d="M12 21a9 9 0 0 1-6.36-15.36L12 12"/></svg>',
+  TRAFFIC_SIGNAL: '<svg class="svg-icon" viewBox="0 0 24 24" style="stroke: #FF7A45;"><rect x="6" y="2" width="12" height="20" rx="3"/><circle cx="12" cy="7" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="17" r="2"/></svg>',
+  DEFAULT: '<svg class="svg-icon" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="9" y1="6" x2="9.01" y2="6"/><line x1="15" y1="6" x2="15.01" y2="6"/><line x1="9" y1="10" x2="9.01" y2="10"/><line x1="15" y1="10" x2="15.01" y2="10"/><line x1="9" y1="14" x2="9.01" y2="14"/><line x1="15" y1="14" x2="15.01" y2="14"/><line x1="9" y1="18" x2="15" y2="18"/></svg>',
+};
+
 class SmartCityApp {
   constructor() {
     this.state = {
@@ -250,54 +264,48 @@ class SmartCityApp {
     this.dom.inspectName.textContent = data.name || "Municipal Infrastructure";
     this.dom.inspectType.textContent = (data.type || "INFRASTRUCTURE").replace(/_/g, " ");
 
+    this.dom.inspectIcon.innerHTML = SVG_ICONS[data.type] || SVG_ICONS.DEFAULT;
+
     if (data.type === "HOSPITAL") {
-      this.dom.inspectIcon.textContent = "🏥";
       this.dom.inspectVal1.textContent = "100% Operational (ICU Ready)";
       this.dom.inspectVal1.className = "text-green";
       this.dom.inspectVal2.textContent = `${this.state.latestMetrics.avg_hospital_occupancy || 60}% Beds Occupied`;
       this.dom.inspectVal3.textContent = `Avg Response: ${this.state.latestMetrics.avg_response_time_min || 7.5} min`;
     } else if (data.type === "SOLAR_FARM") {
-      this.dom.inspectIcon.textContent = "☀️";
       this.dom.inspectVal1.textContent = `${this.state.latestMetrics.renewable_mw || 3.5} MW Clean Output`;
       this.dom.inspectVal1.className = "text-green";
       this.dom.inspectVal2.textContent = "Zero Carbon Emissions";
       this.dom.inspectVal3.textContent = `Supply Share: ${this.state.latestMetrics.energy_supply ? Math.round((this.state.latestMetrics.renewable_mw / this.state.latestMetrics.energy_supply) * 100) : 40}%`;
     } else if (data.type === "GAS_POWER_PLANT") {
-      this.dom.inspectIcon.textContent = "🏭";
       const curtailed = this.state.activePolicies.curtail_nonrenewable;
       this.dom.inspectVal1.textContent = curtailed ? "CURTAILED (50% Cap)" : "Active Peaker (Standard)";
       this.dom.inspectVal1.className = curtailed ? "text-rose" : "text-accent";
       this.dom.inspectVal2.textContent = `Output: ${this.state.latestMetrics.non_renewable_mw || 2.5} MW`;
       this.dom.inspectVal3.textContent = `Hourly Emissions: ${Math.round(this.state.latestMetrics.emissions_kg || 0)} kg`;
     } else if (data.type === "WATER_RESERVOIR") {
-      this.dom.inspectIcon.textContent = "💧";
       const resPct = this.state.latestMetrics.reservoir_level_pct !== undefined ? this.state.latestMetrics.reservoir_level_pct : 85.0;
       this.dom.inspectVal1.textContent = `${resPct.toFixed(1)}% Capacity (${data.capacity || "15,000 kL"})`;
       this.dom.inspectVal1.className = resPct < 25 ? "text-rose" : "text-cyan";
       this.dom.inspectVal2.textContent = `Consumption: ${Math.round(this.state.latestMetrics.water_consumption_kl || 0)} kL/hr`;
       this.dom.inspectVal3.textContent = `Drainage Load: ${this.state.latestMetrics.avg_drainage_load_pct || 25}%`;
     } else if (data.type === "GRID_SUBSTATION") {
-      this.dom.inspectIcon.textContent = "⚡";
       const blackout = !!this.state.latestMetrics.blackout;
       this.dom.inspectVal1.textContent = blackout ? "GRID BLACKOUT (DEFICIT)" : "Active Substation (Balanced)";
       this.dom.inspectVal1.className = blackout ? "text-rose" : "text-green";
       this.dom.inspectVal2.textContent = `Supply: ${(this.state.latestMetrics.energy_supply || 6.0).toFixed(1)} MW / Demand: ${(this.state.latestMetrics.energy_usage || 5.8).toFixed(1)} MW`;
       this.dom.inspectVal3.textContent = `Clean Energy Share: ${this.state.latestMetrics.energy_supply ? Math.round(((this.state.latestMetrics.renewable_mw || 3.5) / this.state.latestMetrics.energy_supply) * 100) : 55}%`;
     } else if (data.type === "GRID_PYLON") {
-      this.dom.inspectIcon.textContent = "🗼";
       this.dom.inspectVal1.textContent = "220 kV High-Voltage Line";
       this.dom.inspectVal1.className = "text-accent";
       this.dom.inspectVal2.textContent = "Transmitting Power to Districts";
       this.dom.inspectVal3.textContent = `Grid Frequency: 50.0 Hz (Synchronized)`;
     } else if (data.type === "DRAINAGE_PUMP") {
-      this.dom.inspectIcon.textContent = "🌀";
       const load = this.state.latestMetrics.avg_drainage_load_pct || 25;
       this.dom.inspectVal1.textContent = `${load}% Saturation (${data.capacity || "3,000 kL/hr"})`;
       this.dom.inspectVal1.className = load > 75 ? "text-rose" : "text-cyan";
       this.dom.inspectVal2.textContent = "Stormwater Flood Prevention Active";
       this.dom.inspectVal3.textContent = `Pumps: 2 High-Flow Turbines Operational`;
     } else if (data.type === "TRAFFIC_SIGNAL") {
-      this.dom.inspectIcon.textContent = "🚦";
       const state = this.state.activePolicies.emergency_green_wave ? "GREEN (EMS Corridor Override)" : data.state || "GREEN";
       this.dom.inspectVal1.textContent = `Signal State: ${state}`;
       this.dom.inspectVal1.className = state.includes("GREEN") ? "text-green" : "text-rose";
@@ -433,12 +441,12 @@ class SmartCityApp {
     if (this.state.isPlaying) {
       this.dom.btnPlay.classList.add('playing');
       this.dom.btnPlayText.textContent = 'Pause';
-      this.dom.btnPlay.querySelector('.btn-icon').textContent = '⏸';
+      this.dom.btnPlay.querySelector('.btn-icon').innerHTML = SVG_ICONS.PAUSE;
       this.startPlayLoop();
     } else {
       this.dom.btnPlay.classList.remove('playing');
       this.dom.btnPlayText.textContent = 'Run Auto';
-      this.dom.btnPlay.querySelector('.btn-icon').textContent = '▶';
+      this.dom.btnPlay.querySelector('.btn-icon').innerHTML = SVG_ICONS.PLAY;
       this.stopPlayLoop();
     }
   }
@@ -924,7 +932,7 @@ class SmartCityApp {
     ctx.fill();
     ctx.fillStyle = '#6ee7b7';
     ctx.font = '8px JetBrains Mono, monospace';
-    ctx.fillText('☀️ Solar', pSolar.x, pSolar.y - 6);
+    ctx.fillText('Solar Array', pSolar.x, pSolar.y - 6);
 
     // Gas Peaker Plant
     ctx.fillStyle = '#f59e0b';
@@ -932,7 +940,7 @@ class SmartCityApp {
     ctx.arc(pGas.x, pGas.y, 4, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = '#fde68a';
-    ctx.fillText('🏭 Gas', pGas.x, pGas.y - 6);
+    ctx.fillText('Gas Peaker', pGas.x, pGas.y - 6);
 
     // Substation
     ctx.fillStyle = this.state.latestMetrics.blackout ? '#f43f5e' : '#38bdf8';
@@ -940,7 +948,7 @@ class SmartCityApp {
     ctx.rect(pSub.x - 3, pSub.y - 3, 6, 6);
     ctx.fill();
     ctx.fillStyle = '#bae6fd';
-    ctx.fillText('⚡ Grid', pSub.x, pSub.y - 6);
+    ctx.fillText('Substation', pSub.x, pSub.y - 6);
 
     // Water Reservoir Basin
     const resLevel = this.state.latestMetrics.reservoir_level_pct !== undefined ? this.state.latestMetrics.reservoir_level_pct : 85;
@@ -952,7 +960,7 @@ class SmartCityApp {
     ctx.fill();
     ctx.stroke();
     ctx.fillStyle = '#e0f2fe';
-    ctx.fillText(`💧 ${Math.round(resLevel)}%`, pRes.x, pRes.y + 3);
+    ctx.fillText(`Res: ${Math.round(resLevel)}%`, pRes.x, pRes.y + 3);
 
     // General Hospital
     ctx.fillStyle = '#f43f5e';
@@ -960,7 +968,7 @@ class SmartCityApp {
     ctx.arc(pHosp.x, pHosp.y, 4, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = '#fca5a5';
-    ctx.fillText('🏥 Hospital', pHosp.x, pHosp.y - 6);
+    ctx.fillText('Hospital', pHosp.x, pHosp.y - 6);
 
     // 9. Traffic Signal Junction Indicators
     [-160, 0, 160].forEach((ix) => {

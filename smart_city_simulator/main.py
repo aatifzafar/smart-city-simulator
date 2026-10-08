@@ -27,7 +27,7 @@ def build_parser() -> argparse.ArgumentParser:
     """Construct the command-line interface parser."""
     parser = argparse.ArgumentParser(
         prog="smart_city_simulator",
-        description="🌆 Mini Smart City Simulator — Advanced Object-Oriented Multi-Subsystem Urban Simulation.",
+        description="Mini Smart City Simulator — Advanced Object-Oriented Multi-Subsystem Urban Simulation.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
@@ -148,12 +148,12 @@ def main() -> None:
         )
 
         if args.threaded:
-            print(f"🚀 [CO-5 Multithreading Mode] Starting Concurrent Subsystem Engine ({args.steps} steps)...")
+            print(f"[CO-5 Multithreading Mode] Starting Concurrent Subsystem Engine ({args.steps} steps)...")
             controller.concurrent_engine.start()
             for step in range(1, args.steps + 1):
                 controller.step(step_idx=step)
             drain_results = controller.concurrent_engine.drain_event_queue()
-            print(f"✅ Multithreaded execution complete. Drained {len(drain_results)} async events safely across threads.")
+            print(f"Multithreaded execution complete. Drained {len(drain_results)} async events safely across threads.")
         else:
             controller.run_simulation(total_steps=args.steps)
 
@@ -165,7 +165,7 @@ def main() -> None:
         sys.exit(130)
 
     # Post-simulation visual output
-    print(f"\n📁 Log files generated:")
+    print(f"\nLog files generated:")
     print(f"   • CSV: {csv_log_path}")
     print(f"   • JSON: {json_log_path}")
 

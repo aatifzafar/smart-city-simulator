@@ -158,7 +158,7 @@ class CityController:
             self.energy.set_curtail_nonrenewable(True)
 
             msg = (
-                f"[Step {event.timestamp:02d}] ⚠️ EMERGENT POLICY ACTIVATION: "
+                f"[Step {event.timestamp:02d}] [POLICY ALERT] ACTIVATION: "
                 f"AQI reached {event.aqi:.1f} ({event.severity}). "
                 f"Activated 'Odd-Even Vehicle Restriction' & 'Fossil Power Curtailment'."
             )
@@ -184,7 +184,7 @@ class CityController:
             self.energy.set_curtail_nonrenewable(False)
 
             msg = (
-                f"[Step {event.timestamp:02d}] 🍃 POLICY DEACTIVATION: "
+                f"[Step {event.timestamp:02d}] [POLICY RESTORED] DEACTIVATION: "
                 f"AQI returned to safe levels ({event.aqi:.1f}). "
                 f"Lifted 'Odd-Even Vehicle Restriction'."
             )
@@ -204,11 +204,11 @@ class CityController:
         if event.reservoir_level_pct < 25.0 and not self.active_policies["water_rationing_rule"]:
             self.active_policies["water_rationing_rule"] = True
             self.water.set_rationing(True)
-            print(f"[Step {event.timestamp:02d}] 💧 WATER RATIONING ACTIVATED (Reserves: {event.reservoir_level_pct:.1f}%).")
+            print(f"[Step {event.timestamp:02d}] [WATER ALERT] RATIONING ACTIVATED (Reserves: {event.reservoir_level_pct:.1f}%).")
         elif event.reservoir_level_pct > 50.0 and self.active_policies["water_rationing_rule"]:
             self.active_policies["water_rationing_rule"] = False
             self.water.set_rationing(False)
-            print(f"[Step {event.timestamp:02d}] 🚰 WATER RATIONING LIFTED (Reserves: {event.reservoir_level_pct:.1f}%).")
+            print(f"[Step {event.timestamp:02d}] [WATER NORMAL] RATIONING LIFTED (Reserves: {event.reservoir_level_pct:.1f}%).")
 
     def _handle_emergency_corridor_event(self, event: EmergencyCorridorEvent) -> None:
         """Emergent Policy: Critical EMS dispatches trigger Green-Wave Corridor."""
@@ -216,22 +216,22 @@ class CityController:
             self.active_policies["emergency_green_wave"] = True
             self.traffic.set_green_wave(True)
             self.emergency.set_green_wave(True)
-            print(f"[Step {event.timestamp:02d}] 🚑 GREEN WAVE ACTIVATED: Priority corridor cleared for EMS {event.incident_id}.")
+            print(f"[Step {event.timestamp:02d}] [EMS GREEN WAVE] Priority corridor cleared for EMS {event.incident_id}.")
 
     def _handle_hospital_overload_event(self, event: HospitalOverloadEvent) -> None:
         if event.timestamp % 6 == 0:
-            print(f"[Step {event.timestamp:02d}] 🏥 {event.message}")
+            print(f"[Step {event.timestamp:02d}] [HOSPITAL] {event.message}")
 
     def _handle_blackout_event(self, event: BlackoutEvent) -> None:
-        print(f"[Step {event.timestamp:02d}] ⚡ {event.message}")
+        print(f"[Step {event.timestamp:02d}] [BLACKOUT] {event.message}")
 
     def _handle_waste_event(self, event: WasteOverflowEvent) -> None:
         if event.timestamp % 12 == 0:
-            print(f"[Step {event.timestamp:02d}] 🗑️ {event.message}")
+            print(f"[Step {event.timestamp:02d}] [WASTE] {event.message}")
 
     def _handle_transit_delay_event(self, event: TransitDelayEvent) -> None:
         if event.timestamp % 12 == 0:
-            print(f"[Step {event.timestamp:02d}] 🚌 {event.message}")
+            print(f"[Step {event.timestamp:02d}] [TRANSIT] {event.message}")
 
     # ---------------------------------------------------------------------
     # CO-3 & CO-4: Stream Generators & Iterator Pipelines
@@ -351,12 +351,12 @@ class CityController:
             raise InvalidConfigError(f"Simulation total_steps must be > 0, got: {total_steps}")
 
         print(f"\n=======================================================")
-        print(f"🚀 Starting Mini Smart City Simulator ({total_steps} steps, {len(self.zones)} zones)")
+        print(f"Starting Mini Smart City Simulator ({total_steps} steps, {len(self.zones)} zones)")
         print(f"=======================================================\n")
 
         for step in range(total_steps):
             self.step(step_idx=step)
 
-        print("\n✅ Simulation successfully finished.")
+        print("\nSimulation successfully finished.")
         return self.time_series
 

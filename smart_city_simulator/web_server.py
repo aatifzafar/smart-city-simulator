@@ -438,7 +438,7 @@ def start_server(port: int = 8000, zones: int = 3, seed: Optional[int] = None) -
     server_address = ("", port)
     httpd = ThreadingHTTPServer(server_address, CitySimulatorAPIHandler)
     print(f"\n==================================================================")
-    print(f"🌐 Smart City Web Dashboard is live at: http://localhost:{port}")
+    print(f"Smart City Web Dashboard is live at: http://localhost:{port}")
     print(f"   Press Ctrl+C in terminal to stop the server.")
     print(f"==================================================================\n")
     try:

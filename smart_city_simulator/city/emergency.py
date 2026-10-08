@@ -210,7 +210,7 @@ class EmergencyServicesSystem(BaseSubsystem):
                     EmergencyCorridorEvent(
                         timestamp=step,
                         message=(
-                            f"🚨 CRITICAL EMS Incident in {zone.name}! "
+                            f"CRITICAL EMS Incident in {zone.name}! "
                             f"Est. Response Time: {actual_response_time:.1f} min. Green wave requested."
                         ),
                         zone_id=zone.id,
@@ -228,7 +228,7 @@ class EmergencyServicesSystem(BaseSubsystem):
                     HospitalOverloadEvent(
                         timestamp=step,
                         message=(
-                            f"⚠️ Hospital Overcrowding at {hosp.name}: "
+                            f"Hospital Overcrowding at {hosp.name}: "
                             f"{hosp.occupancy_rate:.1f}% beds occupied!"
                         ),
                         hospital_id=hosp.id,

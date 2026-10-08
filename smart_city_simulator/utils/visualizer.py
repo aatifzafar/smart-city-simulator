@@ -221,7 +221,7 @@ class Visualizer:
         out_file = self.output_path or (Path(__file__).parent.parent / "data" / "simulation_results.png")
         out_file.parent.mkdir(parents=True, exist_ok=True)
         fig.savefig(out_file, dpi=200, bbox_inches="tight")
-        print(f"📊 Visualization dashboard saved to: {out_file}")
+        print(f"Visualization dashboard saved to: {out_file}")
 
         if not save_only and os.environ.get("DISPLAY", "") != "":
             try:

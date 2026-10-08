@@ -127,7 +127,7 @@ class PublicTransportSystem(BaseSubsystem):
                     TransitDelayEvent(
                         timestamp=step,
                         message=(
-                            f"🚌 Schedule Delay on {route.name}: "
+                            f"Schedule Delay on {route.name}: "
                             f"{route.current_delay_min:.1f} min delay due to sector congestion."
                         ),
                         route_id=route.id,

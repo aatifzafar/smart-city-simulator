@@ -29,7 +29,7 @@ class SmartCityDashboard(tk.Tk):
 
     def __init__(self, initial_zones: int = 3, initial_steps: int = 48) -> None:
         super().__init__()
-        self.title("🌆 Mini Smart City Simulator — Interactive Dashboard")
+        self.title("Mini Smart City Simulator — Interactive Dashboard")
         self.geometry("1100x820")
         self.minsize(950, 700)
 
@@ -79,13 +79,13 @@ class SmartCityDashboard(tk.Tk):
         controls_frame.pack(fill=tk.X, padx=10, pady=5)
 
         # Buttons
-        self.btn_play = ttk.Button(controls_frame, text="▶ Run / Pause", command=self.toggle_run)
+        self.btn_play = ttk.Button(controls_frame, text="Run / Pause", command=self.toggle_run)
         self.btn_play.pack(side=tk.LEFT, padx=4)
 
-        self.btn_step = ttk.Button(controls_frame, text="⏭ Step (1h)", command=self.step_simulation)
+        self.btn_step = ttk.Button(controls_frame, text="Step (1h)", command=self.step_simulation)
         self.btn_step.pack(side=tk.LEFT, padx=4)
 
-        self.btn_reset = ttk.Button(controls_frame, text="🔄 Reset", command=self.reset_simulation)
+        self.btn_reset = ttk.Button(controls_frame, text="Reset", command=self.reset_simulation)
         self.btn_reset.pack(side=tk.LEFT, padx=4)
 
         ttk.Separator(controls_frame, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=10)
@@ -159,10 +159,10 @@ class SmartCityDashboard(tk.Tk):
 
     def _on_pollution_event(self, event: PollutionAlertEvent) -> None:
         if event.high_pollution:
-            self._add_log(f"[Step {event.timestamp:02d}] ⚠️ AQI {event.aqi:.1f} (UNHEALTHY) -> Odd-Even rule active!")
+            self._add_log(f"[Step {event.timestamp:02d}] [AQI ALERT] AQI {event.aqi:.1f} (UNHEALTHY) -> Odd-Even rule active!")
 
     def _on_blackout_event(self, event: BlackoutEvent) -> None:
-        self._add_log(f"[Step {event.timestamp:02d}] ⚡ Blackout alert! Deficit {event.deficit_mw:.1f} MW")
+        self._add_log(f"[Step {event.timestamp:02d}] [BLACKOUT] Blackout alert! Deficit {event.deficit_mw:.1f} MW")
 
     def _add_log(self, text: str) -> None:
         self.log_text.insert(tk.END, text + "\n")
@@ -180,10 +180,10 @@ class SmartCityDashboard(tk.Tk):
         """Start or pause continuous automatic simulation."""
         self.is_running = not self.is_running
         if self.is_running:
-            self.btn_play.configure(text="⏸ Pause")
+            self.btn_play.configure(text="Pause")
             self._run_loop()
         else:
-            self.btn_play.configure(text="▶ Run")
+            self.btn_play.configure(text="Run")
 
     def _run_loop(self) -> None:
         """Timer loop advancing simulation."""
@@ -191,8 +191,8 @@ class SmartCityDashboard(tk.Tk):
             return
         if self.current_step >= self.total_steps:
             self.is_running = False
-            self.btn_play.configure(text="▶ Run")
-            self._add_log(f"✅ Simulation reached step limit ({self.total_steps}).")
+            self.btn_play.configure(text="Run")
+            self._add_log(f"Simulation reached step limit ({self.total_steps}).")
             return
 
         self.step_simulation()
