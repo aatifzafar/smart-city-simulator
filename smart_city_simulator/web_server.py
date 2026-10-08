@@ -43,6 +43,12 @@ class CitySimulatorAPIHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, directory=str(WEB_DIR), **kwargs)
 
+    def end_headers(self) -> None:
+        self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+        self.send_header("Pragma", "no-cache")
+        self.send_header("Expires", "0")
+        super().end_headers()
+
     @classmethod
     def setup_controller(cls, zones: int = 3, seed: Optional[int] = None) -> None:
         """Initialize or reset the shared CityController singleton."""

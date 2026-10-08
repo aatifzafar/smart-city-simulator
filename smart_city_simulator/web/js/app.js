@@ -865,9 +865,9 @@ class SmartCityApp {
 
     // 5. Arterial Boulevard & Cross Avenues
     const congestion = this.state.latestMetrics.traffic_congestion || 0.2;
-    let roadColor = '#10b981'; // Green
-    if (congestion > 0.7) roadColor = '#f43f5e'; // Red
-    else if (congestion > 0.4) roadColor = '#f59e0b'; // Amber
+    let roadColor = '#98E51E'; // Neon Lime
+    if (congestion > 0.7) roadColor = '#FA4D26'; // Vivid Vermilion
+    else if (congestion > 0.4) roadColor = '#F59E0B'; // Solar Amber
 
     // Main Arterial Boulevard (East-West)
     const pW = to2D(-240, 0);
@@ -883,7 +883,7 @@ class SmartCityApp {
     [-160, 0, 160].forEach((ax) => {
       const pN = to2D(ax, 210);
       const pS = to2D(ax, -210);
-      ctx.strokeStyle = '#334155';
+      ctx.strokeStyle = '#272A47';
       ctx.lineWidth = 2.5;
       ctx.beginPath();
       ctx.moveTo(pN.x, pN.y);
@@ -897,7 +897,7 @@ class SmartCityApp {
     const pGas = to2D(160, 180);
     const pDowntown = to2D(0, 60);
 
-    ctx.strokeStyle = this.state.latestMetrics.blackout ? '#f43f5e' : 'rgba(245, 158, 11, 0.65)';
+    ctx.strokeStyle = this.state.latestMetrics.blackout ? '#FA4D26' : 'rgba(245, 158, 11, 0.65)';
     ctx.lineWidth = 1.5;
     ctx.setLineDash([3, 3]);
     ctx.beginPath();
@@ -926,55 +926,55 @@ class SmartCityApp {
 
     // 8. Key Infrastructure Nodes & Icons
     // Solar Park
-    ctx.fillStyle = '#10b981';
+    ctx.fillStyle = '#98E51E';
     ctx.beginPath();
     ctx.arc(pSolar.x, pSolar.y, 4, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = '#6ee7b7';
+    ctx.fillStyle = '#B4F538';
     ctx.font = '8px JetBrains Mono, monospace';
     ctx.fillText('Solar Array', pSolar.x, pSolar.y - 6);
 
     // Gas Peaker Plant
-    ctx.fillStyle = '#f59e0b';
+    ctx.fillStyle = '#F59E0B';
     ctx.beginPath();
     ctx.arc(pGas.x, pGas.y, 4, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = '#fde68a';
+    ctx.fillStyle = '#FDE68A';
     ctx.fillText('Gas Peaker', pGas.x, pGas.y - 6);
 
     // Substation
-    ctx.fillStyle = this.state.latestMetrics.blackout ? '#f43f5e' : '#38bdf8';
+    ctx.fillStyle = this.state.latestMetrics.blackout ? '#FA4D26' : '#38BDF8';
     ctx.beginPath();
     ctx.rect(pSub.x - 3, pSub.y - 3, 6, 6);
     ctx.fill();
-    ctx.fillStyle = '#bae6fd';
+    ctx.fillStyle = '#BAE6FD';
     ctx.fillText('Substation', pSub.x, pSub.y - 6);
 
     // Water Reservoir Basin
     const resLevel = this.state.latestMetrics.reservoir_level_pct !== undefined ? this.state.latestMetrics.reservoir_level_pct : 85;
-    ctx.fillStyle = resLevel < 25 ? 'rgba(217, 119, 6, 0.5)' : 'rgba(2, 132, 199, 0.6)';
-    ctx.strokeStyle = '#0284c7';
+    ctx.fillStyle = resLevel < 25 ? 'rgba(250, 77, 38, 0.5)' : 'rgba(2, 132, 199, 0.6)';
+    ctx.strokeStyle = '#0284C7';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.roundRect(pRes.x - 14, pRes.y - 12, 28, 24, 3);
     ctx.fill();
     ctx.stroke();
-    ctx.fillStyle = '#e0f2fe';
+    ctx.fillStyle = '#E0F2FE';
     ctx.fillText(`Res: ${Math.round(resLevel)}%`, pRes.x, pRes.y + 3);
 
     // General Hospital
-    ctx.fillStyle = '#f43f5e';
+    ctx.fillStyle = '#EF4444';
     ctx.beginPath();
     ctx.arc(pHosp.x, pHosp.y, 4, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = '#fca5a5';
+    ctx.fillStyle = '#FCA5A5';
     ctx.fillText('Hospital', pHosp.x, pHosp.y - 6);
 
     // 9. Traffic Signal Junction Indicators
     [-160, 0, 160].forEach((ix) => {
       const pInt = to2D(ix, 0);
       const isGreen = this.state.activePolicies.emergency_green_wave || Math.sin(time + ix) > 0;
-      ctx.fillStyle = isGreen ? '#10b981' : '#f43f5e';
+      ctx.fillStyle = isGreen ? '#98E51E' : '#FA4D26';
       ctx.beginPath();
       ctx.arc(pInt.x, pInt.y, 2.5, 0, Math.PI * 2);
       ctx.fill();
@@ -985,7 +985,7 @@ class SmartCityApp {
       this.city3d.vehicles.forEach((car) => {
         if (!car.mesh.visible) return;
         const pCar = to2D(car.mesh.position.x, car.mesh.position.z);
-        ctx.fillStyle = car.isOddPlate ? '#38bdf8' : '#fbbf24';
+        ctx.fillStyle = car.isOddPlate ? '#38BDF8' : '#FBBF24';
         ctx.beginPath();
         ctx.arc(pCar.x, pCar.y, 1.8, 0, Math.PI * 2);
         ctx.fill();
@@ -998,14 +998,14 @@ class SmartCityApp {
       
       // Radar ring pulse
       const pulseRad = 3 + (Math.sin(time * 6) + 1) * 3;
-      ctx.strokeStyle = 'rgba(244, 63, 94, 0.7)';
+      ctx.strokeStyle = 'rgba(250, 77, 38, 0.7)';
       ctx.lineWidth = 1.2;
       ctx.beginPath();
       ctx.arc(pAmb.x, pAmb.y, pulseRad, 0, Math.PI * 2);
       ctx.stroke();
 
       // Flashing ambulance dot
-      ctx.fillStyle = Math.sin(time * 10) > 0 ? '#f43f5e' : '#ffffff';
+      ctx.fillStyle = Math.sin(time * 10) > 0 ? '#FA4D26' : '#FFFFFF';
       ctx.beginPath();
       ctx.arc(pAmb.x, pAmb.y, 3, 0, Math.PI * 2);
       ctx.fill();

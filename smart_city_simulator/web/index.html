@@ -6,8 +6,8 @@
   <title>Smart City Simulator — 3D Autonomous Digital Twin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=2.0">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&family=Poppins:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css?v=3.0">
 
   <!-- Three.js & OrbitControls from Fast Reliable CDNs -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -15,14 +15,8 @@
 </head>
 <body class="digital-twin-app">
 
-  <!-- Background Ambient Color Blobs for Depth -->
-  <div class="ambient-blob blob-peach"></div>
-  <div class="ambient-blob blob-pink"></div>
-  <div class="ambient-blob blob-lavender"></div>
-  <div class="ambient-blob blob-mint"></div>
-
   <!-- =========================================================================
-       MAIN FROSTED-GLASS APP CONTAINER FRAME (~32px radius)
+       MAIN BENTO APP CONTAINER FRAME (~28px radius)
        ========================================================================= -->
   <div class="app-glass-frame">
 
@@ -31,11 +25,13 @@
          ======================================================================= -->
     <header class="floating-header glass-hud">
       <div class="brand-zone">
-        <!-- Sense-style glowing gradient orb (coral to pink) -->
-        <div class="brand-orb"></div>
-        <div class="brand-title">
-          <h1>Mini Smart City Simulator</h1>
+        <div class="brand-pill-wrap">
+          <span class="badge-pres">PROJECT PRESENTATION</span>
           <span class="badge-twin">3D DIGITAL TWIN</span>
+        </div>
+        <div class="brand-title">
+          <h1>MINI SMART CITY SIMULATOR <span class="brand-spark">*</span></h1>
+          <span class="brand-sub">A simulation-first digital model of a connected city.</span>
         </div>
       </div>
 
@@ -80,6 +76,16 @@
 
       <!-- LEFT COLUMN: Operations Console (Sidebar) -->
       <aside class="operations-console glass-hud">
+        <!-- Core Mechanics Bento Banner (from design reference) -->
+        <div class="card-core-mechanics">
+          <div class="mechanics-header">
+            <span class="badge-core">CORE MECHANICS</span>
+          </div>
+          <p class="mechanics-text">
+            Simulate interconnected urban systems. Observe events. Trigger adaptive city policies instantly.
+          </p>
+        </div>
+
         <div class="panel-section-title">
           <svg class="svg-icon title-icon" viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
           <h2>Operations Console</h2>
@@ -295,6 +301,22 @@
             <span><i class="dot-legend dot-ems"></i> EMS</span>
             <span><i class="dot-legend dot-car"></i> Cars</span>
           </div>
+
+          <!-- Tech Stack Bento Card (from design reference) -->
+          <div class="tech-stack-bento">
+            <div class="tech-pill">
+              <svg class="svg-icon tech-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/></svg>
+              <span>PYTHON BACKEND</span>
+            </div>
+            <div class="tech-pill">
+              <svg class="svg-icon tech-icon" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              <span>EVENT-DRIVEN</span>
+            </div>
+            <div class="tech-pill">
+              <svg class="svg-icon tech-icon" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              <span>WEB DASHBOARD</span>
+            </div>
+          </div>
         </div>
 
         <div class="panel-divider"></div>
@@ -322,7 +344,7 @@
          ======================================================================= -->
     <footer class="bottom-hud-dock glass-hud">
       <!-- Subsystem 1: Traffic -->
-      <div class="subsystem-kpi kpi-peach" id="kpi-traffic">
+      <div class="subsystem-kpi kpi-vermilion" id="kpi-traffic">
         <div class="kpi-top">
           <div class="kpi-icon-chip">
             <svg class="svg-icon" viewBox="0 0 24 24"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H7c-.6 0-1.2.3-1.6.7L3.5 10S2 10.5 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg>
@@ -342,7 +364,7 @@
       </div>
 
       <!-- Subsystem 2: Energy Grid -->
-      <div class="subsystem-kpi kpi-mint" id="kpi-energy">
+      <div class="subsystem-kpi kpi-amber" id="kpi-energy">
         <div class="kpi-top">
           <div class="kpi-icon-chip">
             <svg class="svg-icon" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
@@ -362,7 +384,7 @@
       </div>
 
       <!-- Subsystem 3: AQI -->
-      <div class="subsystem-kpi kpi-lavender" id="kpi-aqi">
+      <div class="subsystem-kpi kpi-lime" id="kpi-aqi">
         <div class="kpi-top">
           <div class="kpi-icon-chip">
             <svg class="svg-icon" viewBox="0 0 24 24"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
@@ -402,7 +424,7 @@
       </div>
 
       <!-- Subsystem 5: Emergency EMS -->
-      <div class="subsystem-kpi kpi-pink" id="kpi-ems">
+      <div class="subsystem-kpi kpi-red" id="kpi-ems">
         <div class="kpi-top">
           <div class="kpi-icon-chip">
             <svg class="svg-icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="14"/><line x1="9" y1="11" x2="15" y2="11"/></svg>
@@ -422,7 +444,7 @@
       </div>
 
       <!-- Subsystem 6: Waste -->
-      <div class="subsystem-kpi kpi-purple" id="kpi-waste">
+      <div class="subsystem-kpi kpi-violet" id="kpi-waste">
         <div class="kpi-top">
           <div class="kpi-icon-chip">
             <svg class="svg-icon" viewBox="0 0 24 24"><polyline points="7 10 12 15 17 10"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
